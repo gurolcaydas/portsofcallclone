@@ -571,7 +571,7 @@ export class GameRoom {
       hullCondition: 100,
       engineCondition: 100,
       fuelTons: bp.fuelCapacityTons,
-      currentPortId: 'rotterdam', // Delivered to Rotterdam shipyard
+      currentPortId: player.homePortId || 'rotterdam', // Delivered to company's home port
       status: 'docked',
       currentVoyage: null,
       cargo: null
