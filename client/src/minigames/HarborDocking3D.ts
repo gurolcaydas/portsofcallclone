@@ -711,12 +711,12 @@ export class HarborDocking3D {
     }
 
     // 7. Dynamic Camera Following Smoothly Behind the Vessel
-    const camDistance = 115;
-    const camHeight = 46;
+    const camDistance = 130;
+    const camHeight = 56;
     const targetCamX = this.shipPos.x - forwardX * camDistance;
     const targetCamZ = this.shipPos.z - forwardZ * camDistance;
     this.camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.15);
-    this.camera.lookAt(this.shipPos.x + forwardX * 25, 8, this.shipPos.z + forwardZ * 25);
+    this.camera.lookAt(this.shipPos.x + forwardX * 35, 10, this.shipPos.z + forwardZ * 35);
 
     // 8. Collision Detection with Piers & Obstacles
     const shipBox = new THREE.Box3().setFromCenterAndSize(

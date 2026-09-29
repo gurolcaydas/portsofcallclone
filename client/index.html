@@ -310,57 +310,65 @@
         
         <!-- 3D Harbor HUD Overlay -->
         <div class="minigame-hud">
-          <div class="hud-header glass-panel">
-            <div class="hud-title">
-              <span class="hud-beacon">🔴 BERTHING APPROACH</span>
-              <span id="docking-port-name" class="hud-highlight">PORT OF ROTTERDAM</span>
-            </div>
-            <div class="hud-ship-info">
-              <span id="docking-ship-name">VESSEL NAME</span>
-              <span class="status-tag">MANUAL STEERING</span>
-            </div>
-          </div>
-
-          <div class="hud-telemetry glass-panel">
-            <div class="telemetry-item">
-              <span class="label">SPEED</span>
-              <span class="val" id="docking-speed">0.0 kts</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="label">RUDDER</span>
-              <span class="val" id="docking-rudder">0° MID</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="label">ENGINE</span>
-              <span class="val" id="docking-throttle">STOP</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="label">WIND</span>
-              <span class="val" id="docking-wind">12 kts NW</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="label">HULL INTEGRITY</span>
-              <div class="integrity-bar">
-                <div id="docking-hull-fill" class="fill" style="width: 100%;"></div>
+          <div class="hud-top-section">
+            <div class="hud-header glass-panel">
+              <div class="hud-title">
+                <span class="hud-beacon">🔴 BERTHING APPROACH</span>
+                <span id="docking-port-name" class="hud-highlight">PORT OF ROTTERDAM</span>
+              </div>
+              <div class="hud-ship-info">
+                <span id="docking-ship-name">VESSEL NAME</span>
+                <span class="status-tag">MANUAL STEERING</span>
               </div>
             </div>
-          </div>
 
-          <!-- Real-Time Berthing Instruction Banner -->
-          <div id="docking-berth-prompt" class="glass-panel" style="display: none; position: absolute; top: 125px; left: 50%; transform: translateX(-50%); padding: 10px 24px; font-weight: 800; font-size: 1rem; border: 2px solid #ffa502; background: rgba(10, 20, 35, 0.9); color: #ffa502; border-radius: 8px; z-index: 50; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            ⚓ INSIDE BERTH SLIPWAY — REVERSE PROPULSION TO STOP VESSEL (0.0 KTS)!
-          </div>
-
-          <div class="hud-controls glass-panel">
-            <div class="control-hints">
-              <span class="key-badge">W / S</span> Throttle Ahead / Astern
-              <span class="key-badge">A / D</span> Port / Starboard Rudder
-              <span class="key-badge">SPACE</span> Emergency Stop
+            <!-- Real-Time Berthing Instruction Banner -->
+            <div id="docking-berth-prompt" class="glass-panel" style="display: none;">
+              ⚓ INSIDE BERTH SLIPWAY — REVERSE PROPULSION TO STOP VESSEL (0.0 KTS)!
             </div>
-            <div class="hud-action-buttons">
-              <button id="btn-hire-tugs" class="btn btn-warning btn-sm" title="Pay $12,000 harbor tug fee to dock automatically">
-                Hire Tugs ($12k)
-              </button>
+          </div>
+
+          <!-- Bottom Bridge Console: Telemetry & Controls Consolidated -->
+          <div class="hud-bridge-console glass-panel">
+            <div class="hud-telemetry">
+              <div class="telemetry-item">
+                <span class="label">SPEED</span>
+                <span class="val" id="docking-speed">0.0 kts</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="label">RUDDER</span>
+                <span class="val" id="docking-rudder">0° MID</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="label">ENGINE</span>
+                <span class="val" id="docking-throttle">STOP</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="label">WIND</span>
+                <span class="val" id="docking-wind">12 kts NW</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="label">HULL INTEGRITY</span>
+                <div class="integrity-bar">
+                  <div id="docking-hull-fill" class="fill" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hud-controls-divider"></div>
+
+            <div class="hud-controls">
+              <!-- Steering buttons dynamically prepended here -->
+              <div class="control-hints">
+                <span class="key-badge">W / S</span> Throttle Ahead / Astern
+                <span class="key-badge">A / D</span> Rudder Port / Stbd
+                <span class="key-badge">SPACE</span> Stop
+              </div>
+              <div class="hud-action-buttons">
+                <button id="btn-hire-tugs" class="btn btn-warning btn-sm" title="Pay $12,000 harbor tug fee to dock automatically">
+                  Hire Tugs ($12k)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -380,17 +388,22 @@
       <section id="view-hazard-3d" class="screen-view hidden">
         <div id="three-hazard-container" class="three-container"></div>
         <div class="hazard-hud">
-          <div class="hazard-header glass-panel">
-            <div class="alert-pulse">⚠️ MARITIME EMERGENCY ALERT</div>
-            <h2 id="hazard-title">ICEBERG FIELD AHEAD</h2>
-            <p>Steer clear of floating obstacles! Maintain safe steerageway.</p>
+          <div class="hazard-top-section">
+            <div class="hazard-header glass-panel">
+              <div class="alert-pulse">⚠️ MARITIME EMERGENCY ALERT</div>
+              <h2 id="hazard-title">ICEBERG FIELD AHEAD</h2>
+              <p>Steer clear of floating obstacles! Maintain safe steerageway.</p>
+            </div>
           </div>
-          <div class="hazard-telemetry glass-panel">
-            <div class="hazard-timer">DISTANCE REMAINING: <span id="hazard-dist-left">2,000m</span></div>
-            <div class="hazard-hull">HULL: <span id="hazard-hull-val">90%</span></div>
-          </div>
-          <div class="hazard-controls glass-panel">
-            <span>Use <strong>A / D</strong> or Left / Right Arrows to avoid obstacles!</span>
+          <div class="hazard-bottom-console glass-panel">
+            <div class="hazard-telemetry">
+              <div class="hazard-timer">DISTANCE REMAINING: <span id="hazard-dist-left">2,000m</span></div>
+              <div class="hazard-hull">HULL INTEGRITY: <span id="hazard-hull-val">100%</span></div>
+            </div>
+            <div class="hazard-controls-divider"></div>
+            <div class="hazard-controls">
+              <span>Use <strong>A / D</strong> or Left / Right Arrows to avoid obstacles!</span>
+            </div>
           </div>
         </div>
       </section>
