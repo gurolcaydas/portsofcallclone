@@ -203,6 +203,18 @@
           <div id="tab-worldmap" class="game-subview active">
             <div class="map-viewport">
               <canvas id="world-map-canvas"></canvas>
+
+              <!-- Map Filter Controls -->
+              <div class="map-top-bar">
+                <div class="map-filter-group">
+                  <button type="button" class="btn-map-filter active" id="btn-map-filter-all" data-filter="all">🌐 All Fleets</button>
+                  <button type="button" class="btn-map-filter" id="btn-map-filter-mine" data-filter="mine">🚢 My Fleet Only</button>
+                </div>
+                <div id="map-fleet-summary" class="map-fleet-summary">
+                  <span>0 Underway • 0 Berthed</span>
+                </div>
+              </div>
+
               <!-- Map Legend / Overlays -->
               <div class="map-overlay-panel glass-panel">
                 <h4>ACTIVE VESSEL TRACKER</h4>
@@ -210,8 +222,12 @@
                   <div class="empty-hint">No vessels currently at sea. Dock at a port to charter cargo.</div>
                 </div>
               </div>
+
+              <!-- Floating Ship/Port Tactical Tooltip -->
+              <div id="map-tactical-tooltip" class="map-tactical-tooltip hidden"></div>
+
               <div class="map-controls">
-                <div class="map-tip">💡 Click on any Port Beacon to view port facilities & freight contracts.</div>
+                <div class="map-tip">💡 Click on any Port Beacon or Sailing Vessel to inspect facilities, voyages, and cargo charters.</div>
               </div>
             </div>
           </div>

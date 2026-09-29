@@ -20,9 +20,20 @@ class App {
     this.network = new NetworkClient();
     this.ui = new UIManager(this.network);
 
-    this.worldMap = new WorldMap('world-map-canvas', (port) => {
-      this.ui.openPortModal(port);
-    });
+    this.worldMap = new WorldMap(
+      'world-map-canvas',
+      (port) => {
+        this.ui.openPortModal(port);
+      },
+      (ship, player) => {
+        if (player.id === this.network.playerId) {
+          this.ui.selectShip(ship.id);
+          this.ui.showToast(`Selected vessel ${ship.name}`, 'info');
+        } else {
+          this.ui.showToast(`Vessel ${ship.name} belongs to ${player.name}`, 'info');
+        }
+      }
+    );
 
     this.setupLobbyEvents();
     this.setupNetworkEvents();
@@ -356,7 +367,7 @@ class App {
 
     this.network.onStateUpdate = (state: GameState) => {
       this.currentState = state;
-      this.worldMap.updateState(state);
+      this.worldMap.updateState(state, this.network.playerId);
       this.ui.updateState(state, this.network.playerId);
 
       // If in lobby, update roster

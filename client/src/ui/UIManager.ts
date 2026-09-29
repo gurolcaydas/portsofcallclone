@@ -41,6 +41,10 @@ export class UIManager {
     }, 4500);
   }
 
+  public selectShip(shipId: string) {
+    this.selectedShipId = shipId;
+  }
+
   public switchTab(targetId: string) {
     const navTabs = document.querySelectorAll('.nav-tab');
     navTabs.forEach((t) => {
