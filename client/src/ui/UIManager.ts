@@ -225,6 +225,25 @@ export class UIManager {
     document.getElementById('port-modal-fee')!.textContent = `$${port.portFeePerCall.toLocaleString()}`;
     document.getElementById('port-modal-drydock')!.textContent = port.hasDrydock ? 'Available' : 'None';
 
+    const terminalEl = document.getElementById('port-modal-terminal');
+    if (terminalEl) {
+      if (port.category === 'passenger') {
+        terminalEl.innerHTML = '<span style="color: #00d2ff;">🚢 Dedicated Cruise & Passenger Terminal</span>';
+      } else if (port.category === 'cargo') {
+        terminalEl.innerHTML = '<span style="color: #2ed573;">📦 Dedicated Heavy Cargo Terminal</span>';
+      } else {
+        terminalEl.innerHTML = '<span style="color: #ffa502;">⚡ Dual Mixed Hub (📦 Cargo + 🚢 Passenger)</span>';
+      }
+    }
+
+    const volumeEl = document.getElementById('port-modal-volume');
+    if (volumeEl) {
+      const parts: string[] = [];
+      if (port.annualCargoTonnageMillions) parts.push(`${port.annualCargoTonnageMillions}M tons cargo`);
+      if (port.annualPassengersThousands) parts.push(`${(port.annualPassengersThousands / 1000).toFixed(1)}M passengers`);
+      volumeEl.textContent = parts.length > 0 ? parts.join(' • ') : 'Regional Hub';
+    }
+
     const jumpBtn = document.getElementById('btn-jump-to-charters');
     if (jumpBtn) {
       jumpBtn.onclick = () => {
