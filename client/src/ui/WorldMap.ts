@@ -48,17 +48,30 @@ export class WorldMap {
     this.startLoop();
   }
 
-  private setupResize() {
-    const resize = () => {
-      const parent = this.canvas.parentElement;
-      if (parent) {
-        this.canvas.width = parent.clientWidth * window.devicePixelRatio;
-        this.canvas.height = parent.clientHeight * window.devicePixelRatio;
-        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  public resize = () => {
+    const parent = this.canvas.parentElement;
+    if (parent && parent.clientWidth > 0 && parent.clientHeight > 0) {
+      const dpr = window.devicePixelRatio || 1;
+      const targetW = Math.round(parent.clientWidth * dpr);
+      const targetH = Math.round(parent.clientHeight * dpr);
+
+      if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+        this.canvas.width = targetW;
+        this.canvas.height = targetH;
       }
-    };
-    window.addEventListener('resize', resize);
-    resize();
+    }
+  };
+
+  private setupResize() {
+    window.addEventListener('resize', this.resize);
+
+    if (typeof ResizeObserver !== 'undefined' && this.canvas.parentElement) {
+      const ro = new ResizeObserver(() => {
+        this.resize();
+      });
+      ro.observe(this.canvas.parentElement);
+    }
+    this.resize();
   }
 
   private setupFilterButtons() {
@@ -275,6 +288,21 @@ export class WorldMap {
     const w = rect.width;
     const h = rect.height;
 
+    // If tab or container is not currently visible (size 0), skip rendering
+    if (w <= 0 || h <= 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const targetW = Math.round(w * dpr);
+    const targetH = Math.round(h * dpr);
+
+    // Auto-sync canvas pixel buffer if dimensions changed or were initially 0
+    if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+      this.canvas.width = targetW;
+      this.canvas.height = targetH;
+    }
+
+    this.ctx.save();
+    this.ctx.scale(dpr, dpr);
     this.ctx.clearRect(0, 0, w, h);
 
     const scaleX = w / this.REF_W;
@@ -295,6 +323,8 @@ export class WorldMap {
 
     // 4. Draw Port Beacons and Docked Vessel Badges
     this.drawPorts(scaleX, scaleY, time);
+
+    this.ctx.restore();
   }
 
   private drawContinents(scaleX: number, scaleY: number) {
@@ -570,9 +600,13 @@ export class WorldMap {
         ctx.strokeStyle = 'rgba(0, 210, 255, 0.45)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        if ((ctx as any).roundRect) {
-          (ctx as any).roundRect(badgeX, badgeY - 7, width, 14, 4);
-        } else {
+        try {
+          if (typeof (ctx as any).roundRect === 'function') {
+            (ctx as any).roundRect(badgeX, badgeY - 7, width, 14, 4);
+          } else {
+            ctx.rect(badgeX, badgeY - 7, width, 14);
+          }
+        } catch {
           ctx.rect(badgeX, badgeY - 7, width, 14);
         }
         ctx.fill();

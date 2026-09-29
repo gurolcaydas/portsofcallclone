@@ -69,6 +69,8 @@ export class UIManager {
       this.renderBrokerView();
     } else if (targetId === 'tab-shipyard') {
       this.renderShipyardView();
+    } else if (targetId === 'tab-worldmap') {
+      window.dispatchEvent(new Event('resize'));
     }
   }
 
