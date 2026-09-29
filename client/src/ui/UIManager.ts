@@ -22,6 +22,7 @@ export class UIManager {
     this.setupNavigation();
     this.setupPortModal();
     this.setupBankActions();
+    this.setupSliderArrows();
   }
 
   public showToast(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
@@ -89,6 +90,77 @@ export class UIManager {
     if (brokerTopBack) {
       brokerTopBack.addEventListener('click', () => this.switchTab('tab-fleet'));
     }
+  }
+
+  private setupSliderArrows() {
+    const bindArrow = (prevId: string, nextId: string, sliderId: string) => {
+      const prev = document.getElementById(prevId);
+      const next = document.getElementById(nextId);
+      const slider = document.getElementById(sliderId);
+      if (prev && slider) {
+        prev.onclick = () => slider.scrollBy({ left: -260, behavior: 'smooth' });
+      }
+      if (next && slider) {
+        next.onclick = () => slider.scrollBy({ left: 260, behavior: 'smooth' });
+      }
+    };
+
+    bindArrow('btn-broker-ship-prev', 'btn-broker-ship-next', 'broker-vessel-slider');
+    bindArrow('btn-yard-ship-prev', 'btn-yard-ship-next', 'yard-vessel-slider');
+  }
+
+  private renderVesselSlider(
+    containerId: string,
+    player: PlayerCompany,
+    onSelect: () => void
+  ) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!this.selectedShipId || !player.ships.some((s) => s.id === this.selectedShipId)) {
+      this.selectedShipId = player.ships[0]?.id || null;
+    }
+
+    container.innerHTML = player.ships.map((ship) => {
+      const bp = SHIP_BLUEPRINTS.find((b) => b.id === ship.blueprintId) || SHIP_BLUEPRINTS[0];
+      const isSelected = ship.id === this.selectedShipId;
+      const isDocked = ship.status === 'docked';
+      const port = WORLD_PORTS.find((p) => p.id === ship.currentPortId);
+      const portName = port ? port.name : 'Unknown Port';
+
+      const statusBadge = isDocked
+        ? `<span class="vsc-badge badge-docked">⚓ DOCKED @ ${portName.toUpperCase()}</span>`
+        : ship.status === 'sailing'
+        ? `<span class="vsc-badge badge-sailing">🌊 AT SEA (${ship.currentVoyage?.progressPercent || 0}%)</span>`
+        : `<span class="vsc-badge badge-hazard">⚠️ IN HAZARD</span>`;
+
+      return `
+        <div class="vessel-selector-card ${isSelected ? 'active' : ''} ${isDocked ? 'is-docked' : 'is-sailing'}" data-ship-id="${ship.id}">
+          <div class="vsc-icon-wrap">
+            ${getShipIllustrationSVG(bp.type, player.color)}
+          </div>
+          <div class="vsc-info">
+            <div class="vsc-name-row">
+              <strong class="vsc-name">${ship.name}</strong>
+              ${isSelected ? '<span class="vsc-active-pill">SELECTED</span>' : ''}
+            </div>
+            <div class="vsc-specs">${bp.name} • ${bp.capacityTons.toLocaleString()}t DWT</div>
+            <div class="vsc-status-row">${statusBadge}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.vessel-selector-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const shipId = card.getAttribute('data-ship-id');
+        if (shipId && shipId !== this.selectedShipId) {
+          this.selectedShipId = shipId;
+          sounds.playBell();
+          onSelect();
+        }
+      });
+    });
   }
 
   private setupPortModal() {
@@ -480,22 +552,9 @@ export class UIManager {
     const player = this.currentState.players[this.network.playerId];
     if (!player) return;
 
-    const selectShip = document.getElementById('select-charter-ship') as HTMLSelectElement;
-    if (selectShip) {
-      selectShip.innerHTML = '';
-      player.ships.forEach((s) => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.name} (${s.status.toUpperCase()})`;
-        if (s.id === this.selectedShipId) opt.selected = true;
-        selectShip.appendChild(opt);
-      });
-
-      selectShip.onchange = () => {
-        this.selectedShipId = selectShip.value;
-        this.renderBrokerView();
-      };
-    }
+    this.renderVesselSlider('broker-vessel-slider', player, () => {
+      this.renderBrokerView();
+    });
 
     const currentShip = player.ships.find((s) => s.id === this.selectedShipId) || player.ships[0];
     const container = document.getElementById('contract-list-container');
@@ -626,23 +685,9 @@ export class UIManager {
     const player = this.currentState.players[this.network.playerId];
     if (!player) return;
 
-    // Shipyard ship dropdown
-    const selectShip = document.getElementById('select-yard-ship') as HTMLSelectElement;
-    if (selectShip) {
-      selectShip.innerHTML = '';
-      player.ships.forEach((s) => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.name} (${s.status.toUpperCase()})`;
-        if (s.id === this.selectedShipId) opt.selected = true;
-        selectShip.appendChild(opt);
-      });
-
-      selectShip.onchange = () => {
-        this.selectedShipId = selectShip.value;
-        this.renderShipyardView();
-      };
-    }
+    this.renderVesselSlider('yard-vessel-slider', player, () => {
+      this.renderShipyardView();
+    });
 
     const currentShip = player.ships.find((s) => s.id === this.selectedShipId) || player.ships[0];
     const detailsContainer = document.getElementById('yard-ship-details');

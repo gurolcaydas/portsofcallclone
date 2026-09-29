@@ -223,16 +223,22 @@
             <div class="panel-header broker-header">
               <div>
                 <h2>Freight Exchange & Cargo Contracts</h2>
-                <p class="subtitle">Select a docked vessel and book profitable cargo charters worldwide.</p>
+                <p class="subtitle">Select your vessel below to review available cargo charters worldwide.</p>
               </div>
-              <div class="broker-vessel-select" style="display: flex; gap: 10px; align-items: center;">
-                <label for="select-charter-ship">Vessel:</label>
-                <select id="select-charter-ship" class="styled-select"></select>
-                <button id="btn-broker-top-back" class="btn btn-secondary btn-sm" style="border-color: #00d2ff; color: #00d2ff; white-space: nowrap;">
-                  ⬅ Back to Fleet
-                </button>
-              </div>
+              <button id="btn-broker-top-back" class="btn btn-secondary btn-sm" style="border-color: #00d2ff; color: #00d2ff; white-space: nowrap;">
+                ⬅ Back to Fleet
+              </button>
             </div>
+
+            <!-- Vessel Selection Slider Bar -->
+            <div class="vessel-slider-wrapper">
+              <button class="slider-arrow-btn" id="btn-broker-ship-prev" title="Scroll Left">◄</button>
+              <div id="broker-vessel-slider" class="vessel-slider-track">
+                <!-- Dynamically populated ship cards with icon & status -->
+              </div>
+              <button class="slider-arrow-btn" id="btn-broker-ship-next" title="Scroll Right">►</button>
+            </div>
+
             <div id="contract-list-container" class="contract-grid">
               <!-- Dynamically populated with contracts -->
             </div>
@@ -247,10 +253,16 @@
             <div class="shipyard-layout">
               <div class="shipyard-col glass-panel">
                 <h3>Vessel Maintenance & Refueling</h3>
-                <div class="form-group">
-                  <label for="select-yard-ship">Selected Vessel:</label>
-                  <select id="select-yard-ship" class="styled-select"></select>
+                
+                <!-- Vessel Selection Slider Bar for Shipyard -->
+                <div class="vessel-slider-wrapper shipyard-slider">
+                  <button class="slider-arrow-btn" id="btn-yard-ship-prev" title="Scroll Left">◄</button>
+                  <div id="yard-vessel-slider" class="vessel-slider-track">
+                    <!-- Dynamically populated ship cards with icon & status -->
+                  </div>
+                  <button class="slider-arrow-btn" id="btn-yard-ship-next" title="Scroll Right">►</button>
                 </div>
+
                 <div id="yard-ship-details" class="yard-details-box">
                   <!-- Ship condition meters and action buttons -->
                 </div>
