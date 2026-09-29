@@ -6,8 +6,8 @@ services:
     container_name: portofcall-game
     restart: unless-stopped
     ports:
-      # Map host port 3001 to container 3001 (or change 3001:3001 to 80:3001 for direct HTTP access)
-      - "3001:3001"
+      # Map host port 80 directly to container 3001
+      - "80:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
