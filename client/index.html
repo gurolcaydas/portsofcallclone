@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ports of Call Online — Multiplayer Maritime Trade Simulator</title>
+  <meta name="description" content="A real-time multiplayer 3D adaptation of the legendary Ports of Call shipping empire simulation game.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Global Maritime Status Bar -->
+    <header id="global-header" class="hidden">
+      <div class="header-left">
+        <div class="logo-mark">
+          <span class="anchor-icon">⚓</span>
+          <span class="game-title">PORTS OF CALL</span>
+          <span class="badge live-badge">ONLINE</span>
+        </div>
+        <div class="room-info">
+          <span class="label">ROOM:</span>
+          <span id="display-room-code" class="code-tag">----</span>
+        </div>
+        <div class="date-display">
+          <span class="label">DATE:</span>
+          <span id="display-game-date" class="highlight-val">DAY 1</span>
+        </div>
+      </div>
+
+      <div class="header-center" id="news-ticker-container">
+        <span class="ticker-label">MARITIME NEWS:</span>
+        <div class="ticker-content" id="news-ticker-text">Loading global markets...</div>
+      </div>
+
+      <div class="header-right">
+        <div class="stat-pill" id="company-cash-pill" title="Company Treasury Balance">
+          <span class="icon">💵</span>
+          <span class="val" id="display-cash">$400,000</span>
+        </div>
+        <div class="stat-pill" id="company-loan-pill" title="Outstanding Bank Loan">
+          <span class="icon">🏦</span>
+          <span class="val" id="display-loan">$150,000</span>
+        </div>
+        <div class="stat-pill" id="company-rep-pill" title="POC Reputation Score">
+          <span class="icon">⭐</span>
+          <span class="val" id="display-rep">60/100</span>
+        </div>
+        <button id="btn-leave-game" class="icon-btn" style="border-color: rgba(255,71,87,0.4); color: #ff4757; font-size: 0.75rem; padding: 4px 8px; font-weight: 600;" title="Leave Game & Return to Lobby">🚪 LEAVE</button>
+        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Audio">🔊</button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-viewport">
+      <!-- 1. Lobby View -->
+      <section id="view-lobby" class="screen-view active">
+        <div class="lobby-backdrop">
+          <div class="waves-bg"></div>
+        </div>
+        <div class="lobby-card glass-panel">
+          <div class="brand-header">
+            <div class="hero-anchor">⚓</div>
+            <h1>PORTS OF CALL</h1>
+            <p class="subtitle">Global Multiplayer Maritime Empire Simulation</p>
+          </div>
+
+          <div class="lobby-tabs">
+            <button id="tab-host" class="tab-btn active">Found New Company (Host)</button>
+            <button id="tab-join" class="tab-btn">Join Syndicate (Enter Code)</button>
+          </div>
+
+          <div id="panel-host" class="tab-panel active">
+            <div class="form-group">
+              <label for="input-host-company">Shipping Line Name</label>
+              <input type="text" id="input-host-company" value="Transatlantic Star" maxlength="28" placeholder="e.g. Blue Star Maritime">
+            </div>
+            <div class="form-group">
+              <label>House Colors (Hull & Flags)</label>
+              <div class="color-palette" id="host-color-picker">
+                <button type="button" class="color-dot active" data-color="#00d2ff" style="background: #00d2ff;"></button>
+                <button type="button" class="color-dot" data-color="#ff4757" style="background: #ff4757;"></button>
+                <button type="button" class="color-dot" data-color="#2ed573" style="background: #2ed573;"></button>
+                <button type="button" class="color-dot" data-color="#ffa502" style="background: #ffa502;"></button>
+                <button type="button" class="color-dot" data-color="#9b59b6" style="background: #9b59b6;"></button>
+              </div>
+            </div>
+            <button id="btn-create-room" class="btn btn-primary btn-glow">Establish Shipping Line</button>
+          </div>
+
+          <div id="panel-join" class="tab-panel">
+            <div class="form-group">
+              <label for="input-join-code">4-Letter Room Code</label>
+              <input type="text" id="input-join-code" class="code-input" maxlength="4" placeholder="ABCD">
+            </div>
+            <div class="form-group">
+              <label for="input-join-company">Shipping Line Name</label>
+              <input type="text" id="input-join-company" value="Pacific Navigator" maxlength="28" placeholder="e.g. Orient Express">
+            </div>
+            <div class="form-group">
+              <label>House Colors</label>
+              <div class="color-palette" id="join-color-picker">
+                <button type="button" class="color-dot active" data-color="#ffa502" style="background: #ffa502;"></button>
+                <button type="button" class="color-dot" data-color="#00d2ff" style="background: #00d2ff;"></button>
+                <button type="button" class="color-dot" data-color="#ff4757" style="background: #ff4757;"></button>
+                <button type="button" class="color-dot" data-color="#2ed573" style="background: #2ed573;"></button>
+                <button type="button" class="color-dot" data-color="#9b59b6" style="background: #9b59b6;"></button>
+              </div>
+            </div>
+            <button id="btn-join-room" class="btn btn-primary">Join Voyage</button>
+          </div>
+
+          <div id="lobby-waiting-area" class="hidden">
+            <div class="room-share-badge">
+              <span>ROOM CODE:</span>
+              <strong id="lobby-code-display" class="share-code">----</strong>
+            </div>
+            <div class="player-roster">
+              <h3>REGISTERED SHIPPING LINES (<span id="roster-count">1</span>)</h3>
+              <ul id="roster-list" class="roster-items"></ul>
+            </div>
+            <div class="host-controls">
+              <button id="btn-start-game" class="btn btn-success btn-large btn-glow">Cast Off & Begin Simulation</button>
+              <p class="hint-text">All players operate simultaneously in real-time.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Simulation Workspace (Map, Fleet, Office, Shipyard, Bank) -->
+      <section id="view-game" class="screen-view hidden">
+        <!-- Main Interactive Navigation Tabs -->
+        <nav class="game-nav">
+          <button class="nav-tab active" data-target="tab-worldmap">
+            <span class="nav-icon">🗺️</span> World Shipping Lanes
+          </button>
+          <button class="nav-tab" data-target="tab-fleet">
+            <span class="nav-icon">🚢</span> Fleet Management
+          </button>
+          <button class="nav-tab" data-target="tab-broker">
+            <span class="nav-icon">📜</span> Freight Market
+          </button>
+          <button class="nav-tab" data-target="tab-shipyard">
+            <span class="nav-icon">🏗️</span> Port Shipyard & Bunker
+          </button>
+          <button class="nav-tab" data-target="tab-bank">
+            <span class="nav-icon">🏛️</span> Maritime Banking
+          </button>
+          <button class="nav-tab" data-target="tab-leaderboard">
+            <span class="nav-icon">🏆</span> Syndicate Standings
+          </button>
+        </nav>
+
+        <!-- Subviews Container -->
+        <div class="subview-container">
+          <!-- View A: Interactive World Map -->
+          <div id="tab-worldmap" class="game-subview active">
+            <div class="map-viewport">
+              <canvas id="world-map-canvas"></canvas>
+              <!-- Map Legend / Overlays -->
+              <div class="map-overlay-panel glass-panel">
+                <h4>ACTIVE VESSEL TRACKER</h4>
+                <div id="map-active-voyages" class="voyage-list-compact">
+                  <div class="empty-hint">No vessels currently at sea. Dock at a port to charter cargo.</div>
+                </div>
+              </div>
+              <div class="map-controls">
+                <div class="map-tip">💡 Click on any Port Beacon to view port facilities & freight contracts.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View B: Fleet Management -->
+          <div id="tab-fleet" class="game-subview">
+            <div class="panel-header">
+              <h2>Company Fleet</h2>
+              <p class="subtitle">Monitor vessel condition, bunker levels, cargo holds, and dispatch voyages.</p>
+            </div>
+            <div id="fleet-card-container" class="fleet-grid">
+              <!-- Dynamically populated with ship cards -->
+            </div>
+          </div>
+
+          <!-- View C: Freight Broker -->
+          <div id="tab-broker" class="game-subview">
+            <div class="panel-header broker-header">
+              <div>
+                <h2>Freight Exchange & Cargo Contracts</h2>
+                <p class="subtitle">Select a docked vessel and book profitable cargo charters worldwide.</p>
+              </div>
+              <div class="broker-vessel-select" style="display: flex; gap: 10px; align-items: center;">
+                <label for="select-charter-ship">Vessel:</label>
+                <select id="select-charter-ship" class="styled-select"></select>
+                <button id="btn-broker-top-back" class="btn btn-secondary btn-sm" style="border-color: #00d2ff; color: #00d2ff; white-space: nowrap;">
+                  ⬅ Back to Fleet
+                </button>
+              </div>
+            </div>
+            <div id="contract-list-container" class="contract-grid">
+              <!-- Dynamically populated with contracts -->
+            </div>
+          </div>
+
+          <!-- View D: Shipyard & Bunkering -->
+          <div id="tab-shipyard" class="game-subview">
+            <div class="panel-header">
+              <h2>Shipyard Drydock & Bunkering Station</h2>
+              <p class="subtitle">Refuel, overhaul damaged hulls, service marine diesels, or expand your fleet.</p>
+            </div>
+            <div class="shipyard-layout">
+              <div class="shipyard-col glass-panel">
+                <h3>Vessel Maintenance & Refueling</h3>
+                <div class="form-group">
+                  <label for="select-yard-ship">Selected Vessel:</label>
+                  <select id="select-yard-ship" class="styled-select"></select>
+                </div>
+                <div id="yard-ship-details" class="yard-details-box">
+                  <!-- Ship condition meters and action buttons -->
+                </div>
+              </div>
+              <div class="shipyard-col glass-panel">
+                <h3>New & Used Ship Catalog</h3>
+                <div id="shipyard-catalog" class="catalog-list">
+                  <!-- Ship blueprints purchase options -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View E: Maritime Banking -->
+          <div id="tab-bank" class="game-subview">
+            <div class="panel-header">
+              <h2>International Maritime Credit Bank</h2>
+              <p class="subtitle">Manage credit facilities, borrow for capital investment, or retire debt.</p>
+            </div>
+            <div class="bank-grid">
+              <div class="bank-card glass-panel">
+                <h3>Credit Line Status</h3>
+                <div class="bank-meters">
+                  <div class="meter-row">
+                    <span>Credit Limit:</span>
+                    <strong id="bank-credit-limit" class="currency">$500,000</strong>
+                  </div>
+                  <div class="meter-row">
+                    <span>Outstanding Debt:</span>
+                    <strong id="bank-current-debt" class="currency text-warn">$150,000</strong>
+                  </div>
+                  <div class="meter-row">
+                    <span>Available Credit:</span>
+                    <strong id="bank-avail-credit" class="currency text-success">$350,000</strong>
+                  </div>
+                  <div class="meter-row">
+                    <span>Daily Interest Rate:</span>
+                    <strong class="text-muted">0.025% per day</strong>
+                  </div>
+                </div>
+                <div class="bank-actions">
+                  <div class="form-row">
+                    <input type="number" id="input-borrow-amount" min="10000" step="10000" value="50000">
+                    <button id="btn-bank-borrow" class="btn btn-primary">Borrow Funds</button>
+                  </div>
+                  <div class="form-row">
+                    <input type="number" id="input-repay-amount" min="10000" step="10000" value="50000">
+                    <button id="btn-bank-repay" class="btn btn-secondary">Repay Principal</button>
+                  </div>
+                </div>
+              </div>
+              <div class="bank-card glass-panel">
+                <h3>Financial Advisor Briefing</h3>
+                <p class="advisor-text">
+                  "Maintain sufficient cash reserves to bunker fuel at favorable ports. A reputation above 80 points unlocks exclusive high-value electronics and automobile charter contracts. Defaulting on debt or negative cash exceeding your credit ceiling will result in bankruptcy."
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- View F: Syndicate Standings -->
+          <div id="tab-leaderboard" class="game-subview">
+            <div class="panel-header">
+              <h2>Shipping Syndicate Leaderboard</h2>
+              <p class="subtitle">Real-time competitor financials and reputation rankings.</p>
+            </div>
+            <div class="leaderboard-table-wrap glass-panel">
+              <table class="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Shipping Company</th>
+                    <th>Fleet Size</th>
+                    <th>Net Worth</th>
+                    <th>Cash Reserves</th>
+                    <th>Delivered Cargoes</th>
+                    <th>POC Rating</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Three.js Harbor Docking Simulator Screen -->
+      <section id="view-docking-3d" class="screen-view hidden">
+        <div id="three-docking-container" class="three-container"></div>
+        
+        <!-- 3D Harbor HUD Overlay -->
+        <div class="minigame-hud">
+          <div class="hud-header glass-panel">
+            <div class="hud-title">
+              <span class="hud-beacon">🔴 BERTHING APPROACH</span>
+              <span id="docking-port-name" class="hud-highlight">PORT OF ROTTERDAM</span>
+            </div>
+            <div class="hud-ship-info">
+              <span id="docking-ship-name">VESSEL NAME</span>
+              <span class="status-tag">MANUAL STEERING</span>
+            </div>
+          </div>
+
+          <div class="hud-telemetry glass-panel">
+            <div class="telemetry-item">
+              <span class="label">SPEED</span>
+              <span class="val" id="docking-speed">0.0 kts</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="label">RUDDER</span>
+              <span class="val" id="docking-rudder">0° MID</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="label">ENGINE</span>
+              <span class="val" id="docking-throttle">STOP</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="label">WIND</span>
+              <span class="val" id="docking-wind">12 kts NW</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="label">HULL INTEGRITY</span>
+              <div class="integrity-bar">
+                <div id="docking-hull-fill" class="fill" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-Time Berthing Instruction Banner -->
+          <div id="docking-berth-prompt" class="glass-panel" style="display: none; position: absolute; top: 125px; left: 50%; transform: translateX(-50%); padding: 10px 24px; font-weight: 800; font-size: 1rem; border: 2px solid #ffa502; background: rgba(10, 20, 35, 0.9); color: #ffa502; border-radius: 8px; z-index: 50; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            ⚓ INSIDE BERTH SLIPWAY — REVERSE PROPULSION TO STOP VESSEL (0.0 KTS)!
+          </div>
+
+          <div class="hud-controls glass-panel">
+            <div class="control-hints">
+              <span class="key-badge">W / S</span> Throttle Ahead / Astern
+              <span class="key-badge">A / D</span> Port / Starboard Rudder
+              <span class="key-badge">SPACE</span> Emergency Stop
+            </div>
+            <div class="hud-action-buttons">
+              <button id="btn-hire-tugs" class="btn btn-warning btn-sm" title="Pay $12,000 harbor tug fee to dock automatically">
+                Hire Tugs ($12k)
+              </button>
+            </div>
+          </div>
+
+          <!-- Docking Result Modal -->
+          <div id="docking-result-modal" class="modal-overlay hidden">
+            <div class="modal-box glass-panel">
+              <h2 id="docking-result-title">VESSEL SECURED</h2>
+              <p id="docking-result-desc">Docked successfully with zero hull damage.</p>
+              <div class="result-breakdown" id="docking-breakdown"></div>
+              <button id="btn-docking-confirm" class="btn btn-primary btn-large">Return to Fleet Operations</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Three.js Ocean Hazard Simulator Screen -->
+      <section id="view-hazard-3d" class="screen-view hidden">
+        <div id="three-hazard-container" class="three-container"></div>
+        <div class="hazard-hud">
+          <div class="hazard-header glass-panel">
+            <div class="alert-pulse">⚠️ MARITIME EMERGENCY ALERT</div>
+            <h2 id="hazard-title">ICEBERG FIELD AHEAD</h2>
+            <p>Steer clear of floating obstacles! Maintain safe steerageway.</p>
+          </div>
+          <div class="hazard-telemetry glass-panel">
+            <div class="hazard-timer">DISTANCE REMAINING: <span id="hazard-dist-left">2,000m</span></div>
+            <div class="hazard-hull">HULL: <span id="hazard-hull-val">90%</span></div>
+          </div>
+          <div class="hazard-controls glass-panel">
+            <span>Use <strong>A / D</strong> or Left / Right Arrows to avoid obstacles!</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-stack"></div>
+
+    <!-- Port Info Modal Dialog -->
+    <div id="port-modal" class="modal-overlay hidden">
+      <div class="modal-box port-modal-box glass-panel">
+        <div class="modal-header">
+          <div>
+            <h2 id="port-modal-title">Port Name</h2>
+            <span id="port-modal-country" class="modal-subtitle">Country</span>
+          </div>
+          <button id="btn-close-port-modal" class="close-btn">&times;</button>
+        </div>
+        <p id="port-modal-desc" class="port-desc"></p>
+        <div class="port-stats-grid">
+          <div class="pstat">
+            <span class="label">Bunker Fuel:</span>
+            <strong id="port-modal-fuel">$480 / ton</strong>
+          </div>
+          <div class="pstat">
+            <span class="label">Port Call Fee:</span>
+            <strong id="port-modal-fee">$12,000</strong>
+          </div>
+          <div class="pstat">
+            <span class="label">Shipyard Drydock:</span>
+            <strong id="port-modal-drydock">Available</strong>
+          </div>
+        </div>
+        <div class="port-modal-actions">
+          <button id="btn-jump-to-charters" class="btn btn-primary">Browse Port Charters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "port-of-call",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multiplayer web-based Port of Call clone",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "npm run dev:server & npm run dev:client",
+    "dev:server": "npm run dev --workspace=@portofcall/server",
+    "dev:client": "npm run dev --workspace=@portofcall/client",
+    "build": "npm run build --workspaces --if-present",
+    "start": "node server/dist/index.js"
+  },
+  "keywords": ["game", "port-of-call", "threejs", "multiplayer", "simulation"],
+  "author": "",
+  "license": "MIT"
+}

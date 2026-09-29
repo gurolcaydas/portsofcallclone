@@ -1,0 +1,353 @@
+import { NetworkClient } from './network/NetworkClient.js';
+import { UIManager } from './ui/UIManager.js';
+import { WorldMap } from './ui/WorldMap.js';
+import { HarborDocking3D } from './minigames/HarborDocking3D.js';
+import { HazardNav3D } from './minigames/HazardNav3D.js';
+import { sounds } from './sound/SoundManager.js';
+import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState } from '@portofcall/shared';
+
+class App {
+  private network: NetworkClient;
+  private ui: UIManager;
+  private worldMap: WorldMap;
+  private dockingGame: HarborDocking3D | null = null;
+  private hazardGame: HazardNav3D | null = null;
+  private activeMinigameShipId: string | null = null;
+  private currentState: GameState | null = null;
+
+  constructor() {
+    this.network = new NetworkClient();
+    this.ui = new UIManager(this.network);
+
+    this.worldMap = new WorldMap('world-map-canvas', (port) => {
+      this.ui.openPortModal(port);
+    });
+
+    this.setupLobbyEvents();
+    this.setupNetworkEvents();
+    this.checkExistingSession();
+  }
+
+  private async checkExistingSession() {
+    const saved = localStorage.getItem('poc_session');
+    if (!saved) return;
+    try {
+      const session = JSON.parse(saved);
+      if (session.roomCode && session.sessionToken) {
+        console.log('Attempting session reconnection:', session.roomCode);
+        const res = await this.network.reconnect(session.roomCode, session.sessionToken);
+        if (res.success) {
+          this.ui.showToast(`Reconnected to Shipping Company (${session.roomCode})!`, 'success');
+          sounds.playBell();
+        } else {
+          console.log('Session expired:', res.error);
+          localStorage.removeItem('poc_session');
+        }
+      }
+    } catch (e) {
+      localStorage.removeItem('poc_session');
+    }
+  }
+
+  private setupLobbyEvents() {
+    // Tabs between Host & Join
+    const tabHost = document.getElementById('tab-host');
+    const tabJoin = document.getElementById('tab-join');
+    const panelHost = document.getElementById('panel-host');
+    const panelJoin = document.getElementById('panel-join');
+
+    tabHost?.addEventListener('click', () => {
+      tabHost.classList.add('active');
+      tabJoin?.classList.remove('active');
+      panelHost?.classList.add('active');
+      panelJoin?.classList.remove('active');
+    });
+
+    tabJoin?.addEventListener('click', () => {
+      tabJoin.classList.add('active');
+      tabHost?.classList.remove('active');
+      panelJoin?.classList.add('active');
+      panelHost?.classList.remove('active');
+    });
+
+    // Color Pickers
+    this.setupColorPicker('host-color-picker');
+    this.setupColorPicker('join-color-picker');
+
+    // Create Room Button
+    const createBtn = document.getElementById('btn-create-room');
+    createBtn?.addEventListener('click', async () => {
+      const nameInput = document.getElementById('input-host-company') as HTMLInputElement;
+      const color = this.getSelectedColor('host-color-picker');
+      const companyName = nameInput?.value.trim() || 'Transatlantic Star';
+
+      const res = await this.network.createRoom(companyName, color);
+      if (res.success && res.roomCode && res.sessionToken) {
+        localStorage.setItem(
+          'poc_session',
+          JSON.stringify({ roomCode: res.roomCode, sessionToken: res.sessionToken, companyName, color })
+        );
+        this.showWaitingLobby(res.roomCode, true);
+        sounds.playFoghorn();
+      } else {
+        this.ui.showToast(res.error || 'Failed to establish room', 'error');
+      }
+    });
+
+    // Join Room Button
+    const joinBtn = document.getElementById('btn-join-room');
+    joinBtn?.addEventListener('click', async () => {
+      const codeInput = document.getElementById('input-join-code') as HTMLInputElement;
+      const nameInput = document.getElementById('input-join-company') as HTMLInputElement;
+      const color = this.getSelectedColor('join-color-picker');
+      const code = codeInput?.value.trim().toUpperCase();
+      const companyName = nameInput?.value.trim() || 'Oceanic Corp';
+
+      if (!code || code.length < 4) {
+        this.ui.showToast('Please enter a valid 4-character room code', 'warning');
+        return;
+      }
+
+      const res = await this.network.joinRoom(code, companyName, color);
+      if (res.success && res.sessionToken) {
+        localStorage.setItem(
+          'poc_session',
+          JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color })
+        );
+        this.showWaitingLobby(code, false);
+        sounds.playFoghorn();
+      } else {
+        this.ui.showToast(res.error || 'Failed to join room', 'error');
+      }
+    });
+
+    // Start Game Button (Host only)
+    const startBtn = document.getElementById('btn-start-game');
+    startBtn?.addEventListener('click', () => {
+      this.network.startGame();
+    });
+
+    // Leave Game Button in Header
+    const leaveBtn = document.getElementById('btn-leave-game');
+    leaveBtn?.addEventListener('click', () => {
+      if (confirm('Leave current shipping company and return to lobby?')) {
+        localStorage.removeItem('poc_session');
+        this.network.leaveRoom();
+        window.location.reload();
+      }
+    });
+
+    // Hire Tugs (auto-dock) button inside 3D docking HUD
+    const hireTugsBtn = document.getElementById('btn-hire-tugs');
+    hireTugsBtn?.addEventListener('click', () => {
+      if (this.activeMinigameShipId) {
+        this.dockingGame?.stop();
+        this.network.autoDock(this.activeMinigameShipId);
+      }
+    });
+  }
+
+  private setupColorPicker(containerId: string) {
+    const dots = document.querySelectorAll(`#${containerId} .color-dot`);
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        dots.forEach((d) => d.classList.remove('active'));
+        dot.classList.add('active');
+      });
+    });
+  }
+
+  private getSelectedColor(containerId: string): string {
+    const active = document.querySelector(`#${containerId} .color-dot.active`) as HTMLElement;
+    return active?.getAttribute('data-color') || '#00d2ff';
+  }
+
+  private showWaitingLobby(code: string, isHost: boolean) {
+    document.getElementById('panel-host')?.classList.remove('active');
+    document.getElementById('panel-join')?.classList.remove('active');
+    document.querySelector('.lobby-tabs')?.classList.add('hidden');
+
+    const waiting = document.getElementById('lobby-waiting-area');
+    waiting?.classList.remove('hidden');
+
+    const codeDisplay = document.getElementById('lobby-code-display');
+    if (codeDisplay) codeDisplay.textContent = code;
+
+    const startBtn = document.getElementById('btn-start-game');
+    if (startBtn) {
+      startBtn.style.display = isHost ? 'block' : 'none';
+    }
+  }
+
+  private setupNetworkEvents() {
+    this.network.onStateUpdate = (state: GameState) => {
+      this.currentState = state;
+      this.worldMap.updateState(state);
+      this.ui.updateState(state, this.network.playerId);
+
+      // If in lobby, update roster
+      if (state.status === 'lobby') {
+        this.updateLobbyRoster(state);
+      } else if (state.status === 'playing') {
+        // Switch to game screen if not already
+        const lobbyView = document.getElementById('view-lobby');
+        const gameView = document.getElementById('view-game');
+        const header = document.getElementById('global-header');
+
+        if (lobbyView?.classList.contains('active')) {
+          lobbyView.classList.remove('active');
+          gameView?.classList.remove('hidden');
+          gameView?.classList.add('active');
+          header?.classList.remove('hidden');
+          sounds.playBell();
+          this.ui.showToast('Global Simulation active! Charter your first cargo at Rotterdam.', 'success');
+        }
+      }
+    };
+
+    this.network.onNews = (news) => {
+      const ticker = document.getElementById('news-ticker-text');
+      if (ticker) {
+        ticker.textContent = news.headline;
+        ticker.style.color = news.type === 'alert' ? '#ff4757' : news.type === 'warning' ? '#ffa502' : '#90b0d0';
+      }
+    };
+
+    this.network.onActionResult = (res) => {
+      if (res.success) {
+        this.ui.showToast(res.message, 'success');
+        if (
+          res.action === 'accept_charter' ||
+          res.action === 'bank_transaction' ||
+          res.action === 'buy_ship' ||
+          res.action === 'repair_ship' ||
+          res.action === 'bunker_fuel'
+        ) {
+          sounds.playCash();
+        } else if (res.action === 'start_voyage') {
+          sounds.playDepartureWhistle();
+          setTimeout(() => sounds.playFoghorn(), 700);
+        } else if (res.action === 'minigame_complete' || res.action === 'auto_dock' || res.action === 'bypass_hazard') {
+          sounds.playBell();
+          sounds.playCash();
+          this.returnToGameView();
+        }
+      } else {
+        this.ui.showToast(res.message, 'error');
+        sounds.playErrorBuzz();
+      }
+    };
+
+    this.network.onMinigameStart = (data) => {
+      this.activeMinigameShipId = data.shipId;
+      if (data.type === 'docking') {
+        this.startDockingMinigame(data.shipId, data.portId || 'rotterdam');
+      } else if (data.type === 'hazard') {
+        this.startHazardMinigame(data.shipId, (data.hazardType as any) || 'iceberg');
+      }
+    };
+
+    this.ui.onLaunchMinigame = (data) => {
+      this.activeMinigameShipId = data.shipId;
+      if (data.type === 'docking') {
+        this.startDockingMinigame(data.shipId, data.portId || 'rotterdam');
+      } else if (data.type === 'hazard') {
+        this.startHazardMinigame(data.shipId, (data.hazardType as any) || 'iceberg');
+      }
+    };
+
+    this.network.onError = (msg) => {
+      this.ui.showToast(msg, 'error');
+    };
+  }
+
+  private updateLobbyRoster(state: GameState) {
+    const list = document.getElementById('roster-list');
+    const count = document.getElementById('roster-count');
+    if (!list) return;
+
+    const players = Object.values(state.players);
+    if (count) count.textContent = `${players.length}`;
+
+    list.innerHTML = '';
+    players.forEach((p) => {
+      const li = document.createElement('li');
+      li.className = 'roster-item';
+      li.innerHTML = `
+        <span class="roster-dot" style="background: ${p.color};"></span>
+        <span>${p.name}</span>
+        ${p.id === state.hostId ? '<span style="color: #ffa502; font-size: 0.75rem; margin-left: auto;">[HOST]</span>' : ''}
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  private startDockingMinigame(shipId: string, portId: string) {
+    const port = WORLD_PORTS.find((p) => p.id === portId) || WORLD_PORTS[0];
+    const player = this.network.playerId && this.currentState ? this.currentState.players[this.network.playerId] : null;
+    const ship = player?.ships.find((s) => s.id === shipId);
+    const blueprint = SHIP_BLUEPRINTS.find((b) => b.id === ship?.blueprintId) || SHIP_BLUEPRINTS[0];
+    const playerColor = player?.color || '#00d2ff';
+    const shipName = ship?.name || 'MY VESSEL';
+
+    const gameView = document.getElementById('view-game');
+    const dockingView = document.getElementById('view-docking-3d');
+
+    gameView?.classList.remove('active');
+    gameView?.classList.add('hidden');
+    dockingView?.classList.remove('hidden');
+    dockingView?.classList.add('active');
+
+    if (!this.dockingGame) {
+      this.dockingGame = new HarborDocking3D('three-docking-container', (result) => {
+        this.network.completeMinigame(shipId, result.score, result.damagePercent, result.success);
+      });
+    }
+
+    this.dockingGame.start(port, shipName, blueprint.type, playerColor);
+  }
+
+  private startHazardMinigame(shipId: string, hazardType: 'iceberg' | 'reef') {
+    const player = this.network.playerId && this.currentState ? this.currentState.players[this.network.playerId] : null;
+    const ship = player?.ships.find((s) => s.id === shipId);
+    const blueprint = SHIP_BLUEPRINTS.find((b) => b.id === ship?.blueprintId) || SHIP_BLUEPRINTS[0];
+    const playerColor = player?.color || '#00d2ff';
+    const shipName = ship?.name || 'MY VESSEL';
+
+    const gameView = document.getElementById('view-game');
+    const hazardView = document.getElementById('view-hazard-3d');
+
+    gameView?.classList.remove('active');
+    gameView?.classList.add('hidden');
+    hazardView?.classList.remove('hidden');
+    hazardView?.classList.add('active');
+
+    if (!this.hazardGame) {
+      this.hazardGame = new HazardNav3D('three-hazard-container', (result) => {
+        this.network.completeMinigame(shipId, 100, result.damagePercent, result.success);
+      });
+    }
+
+    this.hazardGame.start(hazardType, shipName, blueprint.type, playerColor);
+  }
+
+  private returnToGameView() {
+    const dockingView = document.getElementById('view-docking-3d');
+    const hazardView = document.getElementById('view-hazard-3d');
+    const gameView = document.getElementById('view-game');
+
+    dockingView?.classList.remove('active');
+    dockingView?.classList.add('hidden');
+    hazardView?.classList.remove('active');
+    hazardView?.classList.add('hidden');
+
+    gameView?.classList.remove('hidden');
+    gameView?.classList.add('active');
+    this.activeMinigameShipId = null;
+  }
+}
+
+// Boot application
+window.addEventListener('DOMContentLoaded', () => {
+  new App();
+});
