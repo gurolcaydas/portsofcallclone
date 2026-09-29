@@ -13,6 +13,7 @@ export class HazardNav3D {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private animFrameId: number | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   private shipGroup: THREE.Group | null = null;
   private obstacles: Array<{ mesh: THREE.Mesh; box: THREE.Box3 }> = [];
@@ -29,6 +30,9 @@ export class HazardNav3D {
     this.container = document.getElementById(containerId) || document.body;
     this.onComplete = onComplete;
 
+    const initW = this.container.clientWidth || window.innerWidth || 800;
+    const initH = this.container.clientHeight || window.innerHeight || 600;
+
     this.scene = new THREE.Scene();
     // Bright, clear daytime maritime polar / coastal atmosphere (not dark)
     this.scene.background = new THREE.Color(0x3a7ba8);
@@ -36,13 +40,13 @@ export class HazardNav3D {
 
     this.camera = new THREE.PerspectiveCamera(
       60,
-      this.container.clientWidth / (this.container.clientHeight || 1),
+      initW / initH,
       0.5,
       1200
     );
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(initW, initH, false);
     this.renderer.shadowMap.enabled = true;
     this.container.appendChild(this.renderer.domElement);
 
@@ -68,6 +72,22 @@ export class HazardNav3D {
     this.scene.add(water);
 
     window.addEventListener('resize', this.onResize);
+    try {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.syncViewport();
+      });
+      this.resizeObserver.observe(this.container);
+    } catch {
+      // Fallback if ResizeObserver unsupported
+    }
+
+    this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+    });
+    this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+      this.syncViewport();
+    });
+
     this.setupOnScreenControls();
   }
 
@@ -131,11 +151,19 @@ export class HazardNav3D {
     this.obstacles.push({ mesh, box });
   }
 
-  private onResize = () => {
+  public syncViewport() {
     if (!this.container) return;
-    this.camera.aspect = this.container.clientWidth / (this.container.clientHeight || 1);
+    const w = this.container.clientWidth || window.innerWidth || 800;
+    const h = this.container.clientHeight || window.innerHeight || 600;
+    if (w <= 0 || h <= 0) return;
+
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(w, h, false);
+  }
+
+  private onResize = () => {
+    this.syncViewport();
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -173,6 +201,17 @@ export class HazardNav3D {
     shipType: string = 'freighter',
     playerColor: string = '#00d2ff'
   ) {
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+
+    // Force viewport dimensions to sync immediately
+    this.syncViewport();
+    // Schedule follow-up sync to catch DOM transition/layout completion
+    requestAnimationFrame(() => this.syncViewport());
+    setTimeout(() => this.syncViewport(), 60);
+
     this.isFinished = false;
     this.hullDamage = 0;
     this.distanceRemaining = 1700;
@@ -228,6 +267,11 @@ export class HazardNav3D {
 
     let lastTime = performance.now();
     const animate = (time: number) => {
+      // Guard against 0-sized canvas buffer or uninitialized viewport
+      if (this.renderer.domElement.width <= 0 || this.renderer.domElement.height <= 0 || this.camera.aspect <= 0) {
+        this.syncViewport();
+      }
+
       const dt = Math.min(0.1, (time - lastTime) / 1000);
       lastTime = time;
 
@@ -334,6 +378,10 @@ export class HazardNav3D {
   public destroy() {
     this.stop();
     window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);
     }

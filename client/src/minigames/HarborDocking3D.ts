@@ -28,6 +28,7 @@ export class HarborDocking3D {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private animFrameId: number | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   // 3D World Objects
   private shipGroup: THREE.Group | null = null;
@@ -65,6 +66,9 @@ export class HarborDocking3D {
     this.container = document.getElementById(containerId) || document.body;
     this.onComplete = onComplete;
 
+    const initW = this.container.clientWidth || window.innerWidth || 800;
+    const initH = this.container.clientHeight || window.innerHeight || 600;
+
     // Scene
     this.scene = new THREE.Scene();
     // Bright, crisp daylight coastal sky (not dark)
@@ -72,16 +76,11 @@ export class HarborDocking3D {
     this.scene.fog = new THREE.FogExp2(0x91c4ed, 0.0008);
 
     // Camera
-    this.camera = new THREE.PerspectiveCamera(
-      55,
-      this.container.clientWidth / (this.container.clientHeight || 1),
-      0.5,
-      1800
-    );
+    this.camera = new THREE.PerspectiveCamera(55, initW / initH, 0.5, 1800);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(initW, initH, false);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.container.appendChild(this.renderer.domElement);
@@ -90,8 +89,24 @@ export class HarborDocking3D {
     this.setupDaylight();
     this.waterMesh = this.createWater();
 
-    // Event Listeners
+    // Event Listeners & Resize Observers
     window.addEventListener('resize', this.onResize);
+    try {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.syncViewport();
+      });
+      this.resizeObserver.observe(this.container);
+    } catch {
+      // Fallback if ResizeObserver unsupported
+    }
+
+    this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+    });
+    this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+      this.syncViewport();
+    });
+
     this.setupOnScreenControls();
   }
 
@@ -386,11 +401,19 @@ export class HarborDocking3D {
     this.colliders.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(x, 2, z), new THREE.Vector3(6, 8, 6)));
   }
 
-  private onResize = () => {
+  public syncViewport() {
     if (!this.container) return;
-    this.camera.aspect = this.container.clientWidth / (this.container.clientHeight || 1);
+    const w = this.container.clientWidth || window.innerWidth || 800;
+    const h = this.container.clientHeight || window.innerHeight || 600;
+    if (w <= 0 || h <= 0) return;
+
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(w, h, false);
+  }
+
+  private onResize = () => {
+    this.syncViewport();
   };
 
   private setupOnScreenControls() {
@@ -512,6 +535,17 @@ export class HarborDocking3D {
     shipType: string = 'freighter',
     playerColor: string = '#00d2ff'
   ) {
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+
+    // Force viewport dimensions to sync immediately
+    this.syncViewport();
+    // Schedule follow-up sync to catch DOM transition/layout completion
+    requestAnimationFrame(() => this.syncViewport());
+    setTimeout(() => this.syncViewport(), 60);
+
     this.isDocked = false;
     this.hullDamage = 0;
     this.throttleSetting = 1; // Dead Slow Ahead
@@ -571,6 +605,11 @@ export class HarborDocking3D {
 
     let lastTime = performance.now();
     const animate = (time: number) => {
+      // Guard against 0-sized canvas buffer or uninitialized viewport
+      if (this.renderer.domElement.width <= 0 || this.renderer.domElement.height <= 0 || this.camera.aspect <= 0) {
+        this.syncViewport();
+      }
+
       const dt = Math.min(0.1, (time - lastTime) / 1000);
       lastTime = time;
 
@@ -894,6 +933,10 @@ export class HarborDocking3D {
   public destroy() {
     this.stop();
     window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);
     }

@@ -517,6 +517,9 @@ class App {
   }
 
   private returnToGameView() {
+    this.dockingGame?.stop();
+    this.hazardGame?.stop();
+
     const dockingView = document.getElementById('view-docking-3d');
     const hazardView = document.getElementById('view-hazard-3d');
     const gameView = document.getElementById('view-game');
