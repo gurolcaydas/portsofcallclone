@@ -96,13 +96,13 @@ export class HazardNav3D {
 
   private createObstacle(type: 'iceberg' | 'reef', zPos: number, xPosOverride?: number) {
     const isIceberg = type === 'iceberg';
-    const xPos = xPosOverride !== undefined ? xPosOverride : (Math.random() - 0.5) * 110;
+    const xPos = xPosOverride !== undefined ? xPosOverride : (Math.random() - 0.5) * 120;
 
     let geo: THREE.BufferGeometry;
     let mat: THREE.Material;
 
     if (isIceberg) {
-      geo = new THREE.DodecahedronGeometry(7.5 + Math.random() * 4, 1);
+      geo = new THREE.DodecahedronGeometry(10 + Math.random() * 5.5, 1);
       mat = new THREE.MeshStandardMaterial({
         color: 0xe0f2fe,
         roughness: 0.12,
@@ -110,7 +110,7 @@ export class HazardNav3D {
         flatShading: true
       });
     } else {
-      geo = new THREE.ConeGeometry(8 + Math.random() * 4, 16, 6);
+      geo = new THREE.ConeGeometry(11 + Math.random() * 5, 20, 6);
       mat = new THREE.MeshStandardMaterial({
         color: 0x5a4131,
         roughness: 0.85,
@@ -119,14 +119,14 @@ export class HazardNav3D {
     }
 
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(xPos, 5, zPos);
+    mesh.position.set(xPos, 5.5, zPos);
     mesh.rotation.set(Math.random(), Math.random(), Math.random());
     mesh.castShadow = true;
     this.scene.add(mesh);
 
     const box = new THREE.Box3().setFromCenterAndSize(
       mesh.position,
-      new THREE.Vector3(12, 10, 12)
+      new THREE.Vector3(15, 12, 15)
     );
     this.obstacles.push({ mesh, box });
   }
@@ -175,7 +175,7 @@ export class HazardNav3D {
   ) {
     this.isFinished = false;
     this.hullDamage = 0;
-    this.distanceRemaining = 1600;
+    this.distanceRemaining = 1700;
     this.shipX = 0;
     this.activeKeys.clear();
 
@@ -197,18 +197,18 @@ export class HazardNav3D {
       this.shipGroup = null;
     }
     this.shipGroup = buildShip3DModel(shipType, playerColor);
-    // Scale ship to a natural, sleek size so it doesn't block the screen
-    this.shipGroup.scale.set(0.72, 0.72, 0.72);
+    // Well-balanced scale: substantial vessel presence while maintaining navigational clearance
+    this.shipGroup.scale.set(0.85, 0.85, 0.85);
     // Face forward along +Z towards oncoming obstacles
     this.shipGroup.rotation.y = Math.PI;
     this.scene.add(this.shipGroup);
 
-    // Spawn obstacles ahead with fair spacing and alternating navigable channels
+    // Spawn obstacles ahead with balanced density and dynamic navigable channels
     let lastLane = 0;
-    for (let z = 180; z < 1900; z += 160) {
-      const lanes = [-48, -24, 0, 24, 48];
-      const availableLanes = lanes.filter((l) => Math.abs(l - lastLane) >= 30);
-      const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)] || (Math.random() - 0.5) * 90;
+    for (let z = 160; z < 2000; z += 120) {
+      const lanes = [-50, -25, 0, 25, 50];
+      const availableLanes = lanes.filter((l) => Math.abs(l - lastLane) >= 25);
+      const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)] ?? (Math.random() - 0.5) * 100;
       lastLane = lane;
       this.createObstacle(hazardType, z, lane);
     }
@@ -244,16 +244,16 @@ export class HazardNav3D {
   private update(dt: number, time: number) {
     if (!this.shipGroup) return;
 
-    const speed = 40; // Controlled, realistic forward transit speed
+    const speed = 42; // Balanced forward transit speed
     this.distanceRemaining -= speed * dt;
 
-    // Fast, responsive steering
-    const steerSpeed = 95 * dt;
+    // Responsive yet realistic naval steering inertia
+    const steerSpeed = 78 * dt;
     if (this.activeKeys.has('a')) {
-      this.shipX = Math.max(-65, this.shipX - steerSpeed);
+      this.shipX = Math.max(-70, this.shipX - steerSpeed);
     }
     if (this.activeKeys.has('d')) {
-      this.shipX = Math.min(65, this.shipX + steerSpeed);
+      this.shipX = Math.min(70, this.shipX + steerSpeed);
     }
 
     // Move obstacles towards ship
@@ -262,19 +262,19 @@ export class HazardNav3D {
       obs.mesh.position.z -= speed * dt;
       obs.box.setFromCenterAndSize(
         obs.mesh.position,
-        new THREE.Vector3(12, 10, 12)
+        new THREE.Vector3(15, 12, 15)
       );
 
       const shipBox = new THREE.Box3().setFromCenterAndSize(
         this.shipGroup.position,
-        new THREE.Vector3(10, 8, 38)
+        new THREE.Vector3(13, 9, 48)
       );
 
       if (shipBox.intersectsBox(obs.box)) {
         sounds.playImpact();
-        this.hullDamage += 7; // Gentle scrape damage
-        obs.mesh.position.x += 40; // Deflect away
-        obs.box.setFromCenterAndSize(obs.mesh.position, new THREE.Vector3(12, 10, 12));
+        this.hullDamage += 10; // Meaningful damage: ~10 impacts will sink
+        obs.mesh.position.x += 42; // Deflect away after collision
+        obs.box.setFromCenterAndSize(obs.mesh.position, new THREE.Vector3(15, 12, 15));
       }
 
       if (obs.mesh.position.z < -40) {
@@ -283,15 +283,15 @@ export class HazardNav3D {
       }
     }
 
-    // Crisp ship position interpolation & dynamic heel banking
-    this.shipGroup.position.x += (this.shipX - this.shipGroup.position.x) * dt * 11;
+    // Dynamic ship banking and smooth interpolation
+    this.shipGroup.position.x += (this.shipX - this.shipGroup.position.x) * dt * 9;
     this.shipGroup.position.z = 0;
-    this.shipGroup.rotation.z = (this.shipX - this.shipGroup.position.x) * -0.035;
-    this.shipGroup.rotation.x = Math.sin(time * 0.003) * 0.025;
+    this.shipGroup.rotation.z = (this.shipX - this.shipGroup.position.x) * -0.03;
+    this.shipGroup.rotation.x = Math.sin(time * 0.003) * 0.03;
 
-    // High panoramic chase camera with broad forward lookahead
-    this.camera.position.set(this.shipGroup.position.x * 0.45, 48, -110);
-    this.camera.lookAt(this.shipGroup.position.x * 0.65, 8, 75);
+    // Balanced chase camera angle: ample forward view while keeping clear ship silhouette
+    this.camera.position.set(this.shipGroup.position.x * 0.5, 40, -95);
+    this.camera.lookAt(this.shipGroup.position.x * 0.7, 8, 78);
 
     // Update HUD
     const distEl = document.getElementById('hazard-dist-left');
