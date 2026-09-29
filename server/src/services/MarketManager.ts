@@ -24,23 +24,27 @@ export class MarketManager {
       // If origin has a passenger terminal, increase odds of passenger charters
       let commodityList = [...COMMODITIES];
       if (originPort.hasPassengerTerminal) {
-        // Boost passenger commodities in candidate pool
-        const passengerCommodities = COMMODITIES.filter(c => c.type.includes('passenger'));
-        commodityList = [...commodityList, ...passengerCommodities];
+        // Boost passenger and special event commodities in candidate pool
+        const paxCommodities = COMMODITIES.filter(c => c.category === 'passenger' || c.category === 'special_event');
+        commodityList = [...commodityList, ...paxCommodities, ...paxCommodities];
+      } else {
+        // Even without dedicated passenger terminal, ports can host special events (e.g. island wedding, hostage return, scientific expedition)
+        const specialEvents = COMMODITIES.filter(c => c.category === 'special_event');
+        commodityList = [...commodityList, ...specialEvents];
       }
 
       const commodity = commodityList[Math.floor(Math.random() * commodityList.length)];
       const distance = calculatePortDistance(originPort, dest);
 
-      // Tonnage between minTonnage and minTonnage * 3
-      const tonnage = commodity.minTonnage + Math.floor(Math.random() * (commodity.minTonnage * 2));
+      // Tonnage between minTonnage and minTonnage * 2.5
+      const tonnage = commodity.minTonnage + Math.floor(Math.random() * (commodity.minTonnage * 1.5));
       
       // Payment formula based on distance, commodity value multiplier, and tonnage
       // Base rate: ~$0.08 - $0.14 per ton-mile
       const ratePerTonMile = 0.09 + Math.random() * 0.05;
 
       // Passenger prestige bonus if connecting two passenger-terminal ports
-      const isPassengerCharter = commodity.type.includes('passenger');
+      const isPassengerCharter = commodity.category === 'passenger' || commodity.category === 'special_event';
       const passengerBonus = (isPassengerCharter && dest.hasPassengerTerminal) ? 1.25 : 1.0;
 
       const basePay = Math.round(distance * tonnage * ratePerTonMile * commodity.valueMultiplier * passengerBonus);
@@ -57,6 +61,8 @@ export class MarketManager {
         originPortId: originPort.id,
         destinationPortId: dest.id,
         commodity: commodity.name,
+        category: commodity.category,
+        specialEventTitle: commodity.specialEventTitle,
         tonnage,
         payment,
         distanceNauticalMiles: distance,

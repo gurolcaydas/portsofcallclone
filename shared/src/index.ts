@@ -49,9 +49,13 @@ export interface PlayerShip {
   dockingWaitDays?: number;
 }
 
+export type CommodityCategory = 'cargo' | 'passenger' | 'special_event';
+
 export interface CargoPayload {
   contractId: string;
   commodity: string;
+  category?: CommodityCategory;
+  specialEventTitle?: string;
   tonnage: number;
   payment: number;
   destinationPortId: string;
@@ -63,6 +67,8 @@ export interface CharterContract {
   originPortId: string;
   destinationPortId: string;
   commodity: string;
+  category?: CommodityCategory;
+  specialEventTitle?: string;
   tonnage: number;
   payment: number; // Total payout in $
   distanceNauticalMiles: number;
@@ -1110,23 +1116,289 @@ export const SHIP_BLUEPRINTS: ShipBlueprint[] = [
   }
 ];
 
-// Commodities & Passenger Charters
-export const COMMODITIES = [
-  // Bulk & Industrial Cargo
-  { name: 'Crude Oil', valueMultiplier: 1.4, minTonnage: 8000, type: ['tanker'] },
-  { name: 'Grain & Wheat', valueMultiplier: 0.9, minTonnage: 2000, type: ['tramp', 'freighter', 'bulk'] },
-  { name: 'Iron Ore', valueMultiplier: 0.8, minTonnage: 5000, type: ['bulk', 'freighter'] },
-  { name: 'Electronics & Machinery', valueMultiplier: 2.1, minTonnage: 1000, type: ['container', 'freighter'] },
-  { name: 'Automobiles', valueMultiplier: 1.8, minTonnage: 2500, type: ['container', 'freighter'] },
-  { name: 'Textiles & Garments', valueMultiplier: 1.3, minTonnage: 1500, type: ['container', 'tramp'] },
-  { name: 'Coffee & Spices', valueMultiplier: 1.6, minTonnage: 1200, type: ['freighter', 'container', 'tramp'] },
-  { name: 'Chemicals & Plastics', valueMultiplier: 1.7, minTonnage: 3000, type: ['tanker', 'container'] },
+// Commodities, Passenger Charters & Special Maritime Events
+export interface CommodityDefinition {
+  name: string;
+  category: CommodityCategory;
+  valueMultiplier: number;
+  minTonnage: number;
+  type: Array<'tramp' | 'freighter' | 'bulk' | 'container' | 'tanker' | 'passenger'>;
+  specialEventTitle?: string;
+  description?: string;
+}
 
-  // Passenger & Cruise Charters
-  { name: 'Luxury Cruise Passengers', valueMultiplier: 2.6, minTonnage: 1500, type: ['passenger', 'freighter', 'container', 'tramp'] },
-  { name: 'Ocean Ferry Passengers & Vehicles', valueMultiplier: 1.9, minTonnage: 1000, type: ['passenger', 'freighter', 'tramp'] },
-  { name: 'VIP Expedition Tour Group', valueMultiplier: 2.4, minTonnage: 800, type: ['passenger', 'tramp', 'freighter'] }
+export const COMMODITIES: CommodityDefinition[] = [
+  // 1. Bulk & Industrial Cargo (Dedicated cargo vessels: Tramp, Freighter, Bulker, Container, Tanker)
+  {
+    name: 'Crude Oil',
+    category: 'cargo',
+    valueMultiplier: 1.4,
+    minTonnage: 8000,
+    type: ['tanker'],
+    description: 'Bulk petroleum crude requiring specialized oil tanker holds.'
+  },
+  {
+    name: 'Grain & Wheat',
+    category: 'cargo',
+    valueMultiplier: 0.9,
+    minTonnage: 2000,
+    type: ['tramp', 'freighter', 'bulk'],
+    description: 'Dry agricultural bulk freight suited for tramp steamers, general liners, or bulk carriers.'
+  },
+  {
+    name: 'Iron Ore',
+    category: 'cargo',
+    valueMultiplier: 0.8,
+    minTonnage: 5000,
+    type: ['bulk', 'freighter'],
+    description: 'Heavy mineral ores requiring reinforced holds and high deadweight capacity.'
+  },
+  {
+    name: 'Electronics & Machinery',
+    category: 'cargo',
+    valueMultiplier: 2.1,
+    minTonnage: 1000,
+    type: ['container', 'freighter'],
+    description: 'High-value precision manufacturing cargo requiring secure container cells.'
+  },
+  {
+    name: 'Automobiles',
+    category: 'cargo',
+    valueMultiplier: 1.8,
+    minTonnage: 2500,
+    type: ['container', 'freighter'],
+    description: 'Finished consumer vehicles and high-spec export automotive goods.'
+  },
+  {
+    name: 'Textiles & Garments',
+    category: 'cargo',
+    valueMultiplier: 1.3,
+    minTonnage: 1500,
+    type: ['container', 'freighter', 'tramp'],
+    description: 'Packaged manufactured textiles and clothing ready for global retailers.'
+  },
+  {
+    name: 'Coffee & Spices',
+    category: 'cargo',
+    valueMultiplier: 1.6,
+    minTonnage: 1200,
+    type: ['freighter', 'container', 'tramp'],
+    description: 'Valuable agricultural imports requiring ventilated dry holds.'
+  },
+  {
+    name: 'Chemicals & Plastics',
+    category: 'cargo',
+    valueMultiplier: 1.7,
+    minTonnage: 3000,
+    type: ['tanker', 'container'],
+    description: 'Refined petrochemical derivatives and industrial plastics.'
+  },
+
+  // 2. Commercial Passenger Lines (ONLY dedicated Passenger Liner: ocean_liner)
+  {
+    name: 'Luxury Cruise Passengers',
+    category: 'passenger',
+    valueMultiplier: 2.7,
+    minTonnage: 1500,
+    type: ['passenger'],
+    description: 'High-paying vacationers booked for luxury state rooms, promenade decks, and gala dining.'
+  },
+  {
+    name: 'Ocean Ferry Passengers & Vehicles',
+    category: 'passenger',
+    valueMultiplier: 1.9,
+    minTonnage: 1000,
+    type: ['passenger'],
+    description: 'Scheduled coastal commuters and touring vehicles connecting major world hubs.'
+  },
+  {
+    name: 'International Tourism Tour Group',
+    category: 'passenger',
+    valueMultiplier: 2.3,
+    minTonnage: 800,
+    type: ['passenger'],
+    description: 'Organized international holiday delegations exploring foreign maritime cultures.'
+  },
+
+  // 3. Special Event Passenger Charters (Authorized for Passenger Liners AND vintage/small Tramp Steamers!)
+  {
+    name: 'Private Island Wedding Party Charter',
+    category: 'special_event',
+    specialEventTitle: '💍 WEDDING CRUISE',
+    valueMultiplier: 3.2,
+    minTonnage: 500,
+    type: ['passenger', 'tramp'],
+    description: 'Exclusive multi-day private wedding gala chartered across picturesque coastal destinations.'
+  },
+  {
+    name: 'Hostage Return & Diplomatic Repatriation',
+    category: 'special_event',
+    specialEventTitle: '🕊️ HOSTAGE RETURN',
+    valueMultiplier: 3.8,
+    minTonnage: 350,
+    type: ['passenger', 'tramp'],
+    description: 'Urgent humanitarian mission securing evacuated diplomats and released citizens under neutral ensign.'
+  },
+  {
+    name: 'Oceanographic Scientific Expedition',
+    category: 'special_event',
+    specialEventTitle: '🔬 SCIENTIFIC EXPEDITION',
+    valueMultiplier: 2.9,
+    minTonnage: 600,
+    type: ['passenger', 'tramp'],
+    description: 'Deep-sea research charter conveying oceanographers, surveyors, and specialized equipment.'
+  }
 ];
+
+/**
+ * Validates whether a specific ship blueprint is permitted to accept a charter contract
+ * Rule 1: Passenger ship carries ONLY passengers / special events (no cargo).
+ * Rule 2: Bigger cargo ships carry ONLY cargo (no passengers).
+ * Rule 3: Small & old cargo ship (tramp) can carry cargo AND passenger special events (wedding, hostage return, expedition).
+ */
+export function canShipAcceptContract(
+  blueprint: ShipBlueprint,
+  commodityName: string
+): { allowed: boolean; reason?: string } {
+  const comm = COMMODITIES.find((c) => c.name === commodityName);
+  if (!comm) return { allowed: true };
+
+  // Rule 1: Passenger ships carry ONLY passengers (no industrial cargo)
+  if (blueprint.type === 'passenger') {
+    if (comm.category === 'cargo') {
+      return {
+        allowed: false,
+        reason: `${blueprint.name} is a dedicated passenger liner and cannot carry cargo.`
+      };
+    }
+    return { allowed: true };
+  }
+
+  // Rule 2: Bigger cargo ships carry ONLY cargo (no passengers / events)
+  if (['freighter', 'bulk', 'container', 'tanker'].includes(blueprint.type)) {
+    if (comm.category === 'passenger' || comm.category === 'special_event') {
+      return {
+        allowed: false,
+        reason: `${blueprint.name} is a commercial cargo vessel and cannot carry passengers.`
+      };
+    }
+    if (!comm.type.includes(blueprint.type)) {
+      return {
+        allowed: false,
+        reason: `${blueprint.name} holds cannot transport ${comm.name}.`
+      };
+    }
+    return { allowed: true };
+  }
+
+  // Rule 3: Small and old cargo ship (tramp) carries cargo + special passenger events
+  if (blueprint.type === 'tramp') {
+    if (comm.category === 'passenger') {
+      return {
+        allowed: false,
+        reason: `${blueprint.name} lacks passenger liner decks. It only takes passengers for special events (Wedding, Hostage Return).`
+      };
+    }
+    if (comm.category === 'special_event') {
+      return { allowed: true };
+    }
+    if (!comm.type.includes('tramp')) {
+      return {
+        allowed: false,
+        reason: `${blueprint.name} holds cannot transport ${comm.name}.`
+      };
+    }
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * World Fleet Quota & Scarcity System
+ * Limits the number of ships in the world based on:
+ * 1. Ship Size (smaller ships are more plentiful than mega vessels)
+ * 2. Player Count (more players expand global production quotas)
+ * 3. Duration of the Game (longer play yields newly commissioned dockyard hulls)
+ */
+export interface WorldShipQuotaInfo {
+  blueprintId: string;
+  blueprintName: string;
+  totalCap: number;
+  inService: number;
+  availableStock: number;
+}
+
+export function calculateMaxWorldShips(blueprintId: string, playerCount: number, currentDay: number): number {
+  const p = Math.max(1, playerCount);
+  const d = Math.max(1, currentDay);
+
+  switch (blueprintId) {
+    case 'tramp_steamer':
+      // Smallest: abundant vintage hulls in every global port
+      // Base: 3 per player + 1 every 10 days per player
+      return Math.floor(p * 3 + (d / 10) * p);
+
+    case 'general_freighter':
+      // Medium: standard commercial freighter
+      // Base: 2 per player + 1 every 18 days per player
+      return Math.floor(p * 2 + (d / 18) * p);
+
+    case 'bulk_carrier':
+      // Large bulk carrier: heavy shipyard requirement
+      // Base: 1 per player + 1 every 30 days per player
+      return Math.max(1, Math.floor(p * 1 + (d / 30) * p));
+
+    case 'container_ship':
+      // Large fast container ship: high-tech shipyard slipways
+      // Base: 1 per player + 1 every 35 days per player
+      return Math.max(1, Math.floor(p * 1 + (d / 35) * p));
+
+    case 'ocean_liner':
+      // Luxury passenger liner: prestigious flagship commission
+      // Base: 1 per 2 players (min 1) + 1 every 50 game days
+      return Math.max(1, Math.floor(Math.ceil(p * 0.5) + d / 50));
+
+    case 'super_tanker':
+      // Colossal crude supertanker: largest hulls on the oceans, very scarce
+      // Base: 1 per 2 players (min 1) + 1 every 60 game days
+      return Math.max(1, Math.floor(Math.ceil(p * 0.5) + d / 60));
+
+    default:
+      return Math.max(1, p * 2);
+  }
+}
+
+export function countActiveShipsByBlueprint(state: GameState, blueprintId: string): number {
+  let count = 0;
+  if (!state || !state.players) return 0;
+  for (const player of Object.values(state.players)) {
+    if (!player.ships) continue;
+    for (const ship of player.ships) {
+      if (ship.blueprintId === blueprintId) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+export function getWorldShipStock(state: GameState, blueprintId: string): WorldShipQuotaInfo {
+  const playerCount = Object.keys(state.players || {}).length || 1;
+  const currentDay = state.currentDay || 1;
+  const bp = SHIP_BLUEPRINTS.find((b) => b.id === blueprintId) || SHIP_BLUEPRINTS[0];
+  const totalCap = calculateMaxWorldShips(blueprintId, playerCount, currentDay);
+  const inService = countActiveShipsByBlueprint(state, blueprintId);
+  const availableStock = Math.max(0, totalCap - inService);
+
+  return {
+    blueprintId,
+    blueprintName: bp.name,
+    totalCap,
+    inService,
+    availableStock
+  };
+}
 
 // Initial Starting Player Budget & Setup
 export const INITIAL_PLAYER_SETUP = {

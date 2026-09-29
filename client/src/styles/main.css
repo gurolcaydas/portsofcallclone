@@ -1684,6 +1684,103 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   margin-top: 0.25rem;
 }
 
+/* Badges for Charter Contracts (Cargo, Passenger, Special Event) */
+.badge-contract-special {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.4));
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+  animation: special-pulse 2.5s infinite;
+}
+
+@keyframes special-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.45); }
+}
+
+.badge-contract-pax {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 210, 255, 0.15);
+  border: 1px solid rgba(0, 210, 255, 0.5);
+  color: #00d2ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-contract-cargo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(149, 165, 166, 0.12);
+  border: 1px solid rgba(149, 165, 166, 0.35);
+  color: #bdc3c7;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Shipyard Catalog Badges */
+.badge-role {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.badge-role.pax {
+  background: rgba(0, 210, 255, 0.18);
+  border: 1px solid #00d2ff;
+  color: #00d2ff;
+}
+.badge-role.tramp {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+}
+.badge-role.cargo {
+  background: rgba(160, 174, 192, 0.15);
+  border: 1px solid rgba(160, 174, 192, 0.4);
+  color: #cbd5e0;
+}
+
+.stock-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+.stock-badge.in-stock {
+  background: rgba(46, 213, 115, 0.12);
+  border: 1px solid rgba(46, 213, 115, 0.4);
+  color: #2ed573;
+}
+.stock-badge.out-of-stock {
+  background: rgba(255, 71, 87, 0.18);
+  border: 1px solid rgba(255, 71, 87, 0.6);
+  color: #ff4757;
+  font-weight: 700;
+}
+
 /* =========================================================
    SHIPYARD VIEW
    ========================================================= */

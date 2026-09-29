@@ -7,7 +7,9 @@ import {
   INITIAL_PLAYER_SETUP,
   GlobalNewsItem,
   calculatePortDistance,
-  getRandomCompanyName
+  getRandomCompanyName,
+  canShipAcceptContract,
+  getWorldShipStock
 } from '@portofcall/shared';
 import { MarketManager } from './MarketManager.js';
 import { Server } from 'socket.io';
@@ -305,18 +307,28 @@ export class GameRoom {
 
     const contract = contracts[contractIndex];
     const bp = SHIP_BLUEPRINTS.find(b => b.id === ship.blueprintId) || SHIP_BLUEPRINTS[0];
+
+    // Check ship type & contract compatibility
+    const check = canShipAcceptContract(bp, contract.commodity);
+    if (!check.allowed) {
+      return { success: false, message: check.reason || 'This vessel cannot accept this contract' };
+    }
+
     if (contract.tonnage > bp.capacityTons) {
-      return { success: false, message: `Vessel capacity (${bp.capacityTons}t) is smaller than cargo (${contract.tonnage}t)` };
+      const isPax = contract.category === 'passenger' || contract.category === 'special_event';
+      return { success: false, message: `Vessel capacity (${bp.capacityTons}t) is smaller than ${isPax ? 'passenger manifest' : 'cargo'} (${contract.tonnage}${isPax ? ' pax' : 't'})` };
     }
 
     // Remove from market (claimed by this player)
     contracts.splice(contractIndex, 1);
     this.state.availableContracts[portId] = contracts;
 
-    // Load cargo
+    // Load cargo / passengers
     ship.cargo = {
       contractId: contract.id,
       commodity: contract.commodity,
+      category: contract.category,
+      specialEventTitle: contract.specialEventTitle,
       tonnage: contract.tonnage,
       payment: contract.payment,
       destinationPortId: contract.destinationPortId,
@@ -324,7 +336,14 @@ export class GameRoom {
     };
 
     this.broadcastState();
-    return { success: true, message: `Loaded ${contract.tonnage}t of ${contract.commodity} for ${contract.destinationPortId}` };
+    const isPax = contract.category === 'passenger' || contract.category === 'special_event';
+    const destPortName = WORLD_PORTS.find(p => p.id === contract.destinationPortId)?.name || contract.destinationPortId;
+    return {
+      success: true,
+      message: isPax
+        ? `Embarked ${contract.tonnage} passengers for ${destPortName} (${contract.specialEventTitle || contract.commodity})`
+        : `Loaded ${contract.tonnage}t of ${contract.commodity} for ${destPortName}`
+    };
   }
 
   public bunkerFuel(playerId: string, shipId: string, tons: number): { success: boolean; message: string } {
@@ -507,6 +526,15 @@ export class GameRoom {
 
     const bp = SHIP_BLUEPRINTS.find(b => b.id === blueprintId);
     if (!bp) return { success: false, message: 'Ship blueprint not found' };
+
+    // Check World Ship Quota
+    const stock = getWorldShipStock(this.state, blueprintId);
+    if (stock.availableStock <= 0) {
+      return {
+        success: false,
+        message: `World fleet quota reached for ${bp.name}! Currently ${stock.inService}/${stock.totalCap} in service worldwide. Shipyard slots will expand as game days pass, or when an owner sells.`
+      };
+    }
 
     if (player.cash - bp.baseCost < -player.creditLimit) {
       return { success: false, message: `Insufficient funds/credit for ${bp.name} ($${bp.baseCost.toLocaleString()})` };

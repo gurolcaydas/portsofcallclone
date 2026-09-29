@@ -5,7 +5,10 @@ import {
   Port,
   WORLD_PORTS,
   SHIP_BLUEPRINTS,
-  CharterContract
+  CharterContract,
+  COMMODITIES,
+  canShipAcceptContract,
+  getWorldShipStock
 } from '@portofcall/shared';
 import { NetworkClient } from '../network/NetworkClient.js';
 import { sounds } from '../sound/SoundManager.js';
@@ -647,15 +650,51 @@ export class UIManager {
       const card = document.createElement('div');
       card.className = 'contract-card';
 
-      const canCarry = contract.tonnage <= bp.capacityTons;
-      const isPax = contract.commodity.toLowerCase().includes('passenger') ||
-                    contract.commodity.toLowerCase().includes('cruise') ||
-                    contract.commodity.toLowerCase().includes('tour');
-      const icon = isPax ? '🚢' : '📦';
+      const commDef = COMMODITIES.find((c) => c.name === contract.commodity);
+      const category = contract.category || commDef?.category || 'cargo';
+      const specialTitle = contract.specialEventTitle || commDef?.specialEventTitle;
+
+      const check = canShipAcceptContract(bp, contract.commodity);
+      const canCarryCapacity = contract.tonnage <= bp.capacityTons;
+      const isAllowed = check.allowed && canCarryCapacity;
+
+      const isSpecial = category === 'special_event';
+      const isPax = category === 'passenger' || isSpecial;
+      const icon = isSpecial
+        ? (specialTitle?.includes('WEDDING') ? '💍' : specialTitle?.includes('HOSTAGE') ? '🕊️' : '🔬')
+        : (isPax ? '🚢' : '📦');
       const payloadLabel = isPax ? 'Passengers' : 'Tonnage';
 
+      const typeBadge = isSpecial
+        ? `<span class="badge-contract-special">${specialTitle || '🌟 SPECIAL EVENT'}</span>`
+        : isPax
+        ? `<span class="badge-contract-pax">🚢 PASSENGER LINE</span>`
+        : `<span class="badge-contract-cargo">📦 CARGO FREIGHT</span>`;
+
+      let btnText = 'Book Charter';
+      if (!check.allowed) {
+        if (bp.type === 'passenger') {
+          btnText = 'Passenger Liner Only';
+        } else if (['freighter', 'bulk', 'container', 'tanker'].includes(bp.type)) {
+          btnText = 'Cargo Ship: No Pax';
+        } else if (bp.type === 'tramp') {
+          btnText = 'Special Events Only (Tramp)';
+        } else {
+          btnText = 'Incompatible Vessel';
+        }
+      } else if (!canCarryCapacity) {
+        btnText = 'Capacity Exceeded';
+      } else if (isSpecial) {
+        btnText = 'Accept Special Charter';
+      } else if (isPax) {
+        btnText = 'Embark Passengers';
+      }
+
       card.innerHTML = `
-        <div class="contract-cargo-name">${icon} ${contract.commodity}</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+          <div class="contract-cargo-name">${icon} ${contract.commodity}</div>
+          ${typeBadge}
+        </div>
         <div class="contract-route">
           <span>${originPort?.name}</span> ➔ <strong>${destPort?.name}</strong>
         </div>
@@ -666,15 +705,20 @@ export class UIManager {
           <div>Expires: <strong>Day ${contract.expiryDay}</strong></div>
         </div>
         <div class="contract-payout">+$${contract.payment.toLocaleString()}</div>
-        <button class="btn ${canCarry ? 'btn-primary' : 'btn-secondary btn-disabled'} btn-sm btn-accept-contract">
-          ${canCarry ? (isPax ? 'Embark Passengers' : 'Book Charter') : 'Capacity Exceeded'}
+        <button class="btn ${isAllowed ? 'btn-primary' : 'btn-secondary btn-disabled'} btn-sm btn-accept-contract" title="${!check.allowed ? check.reason : ''}">
+          ${btnText}
         </button>
       `;
 
       const btn = card.querySelector('.btn-accept-contract');
       if (btn) {
         btn.addEventListener('click', () => {
-          if (!canCarry) {
+          if (!check.allowed) {
+            sounds.playErrorBuzz();
+            this.showToast(check.reason || 'This vessel is not permitted to accept this charter.', 'warning');
+            return;
+          }
+          if (!canCarryCapacity) {
             sounds.playErrorBuzz();
             this.showToast(`${isPax ? 'Passenger count' : 'Cargo tonnage'} (${contract.tonnage.toLocaleString()}${isPax ? ' pax' : 't'}) exceeds ship capacity (${bp.capacityTons.toLocaleString()}t)!`, 'warning');
             return;
@@ -888,30 +932,48 @@ export class UIManager {
       }
     }
 
-    // Ship Catalog
+    // Ship Catalog with World Fleet Quotas
     const catalog = document.getElementById('shipyard-catalog');
     if (catalog) {
       catalog.innerHTML = '';
       SHIP_BLUEPRINTS.forEach((bp) => {
         const item = document.createElement('div');
         item.className = 'catalog-card';
+
+        const stock = this.currentState ? getWorldShipStock(this.currentState, bp.id) : { totalCap: 4, inService: 1, availableStock: 3, blueprintId: bp.id, blueprintName: bp.name };
+        const isOutOfStock = stock.availableStock <= 0;
         const canAfford = player.cash - bp.baseCost >= -player.creditLimit;
+        const canBuy = canAfford && !isOutOfStock;
+
+        const roleBadge = bp.type === 'passenger'
+          ? '<span class="badge-role pax">🚢 PASSENGER ONLY (NO CARGO)</span>'
+          : bp.type === 'tramp'
+          ? '<span class="badge-role tramp">⚓ TRAMP (CARGO + SPECIAL EVENTS)</span>'
+          : '<span class="badge-role cargo">📦 CARGO ONLY (NO PAX)</span>';
+
+        const stockBadge = isOutOfStock
+          ? `<span class="stock-badge out-of-stock" title="All global shipyard slots for this vessel type are currently commissioned">🚫 WORLD FLEET FULL: ${stock.inService}/${stock.totalCap}</span>`
+          : `<span class="stock-badge in-stock" title="Available to order from international shipyards">🌐 World Quota: ${stock.inService}/${stock.totalCap} (${stock.availableStock} avail)</span>`;
 
         item.innerHTML = `
           <div class="catalog-illustration-wrap" style="width: 130px; height: 60px; margin-right: 12px; flex-shrink: 0;">
             ${getShipIllustrationSVG(bp.type, '#ffa502')}
           </div>
-          <div class="catalog-specs" style="flex: 1;">
-            <h4>${bp.name}</h4>
-            <p>${bp.description}</p>
-            <p style="margin-top: 4px; color: #00d2ff;">
+          <div class="catalog-specs" style="flex: 1; min-width: 0;">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <h4 style="margin: 0; font-size: 1rem;">${bp.name}</h4>
+              ${roleBadge}
+              ${stockBadge}
+            </div>
+            <p style="margin-top: 4px; font-size: 0.8rem;">${bp.description}</p>
+            <p style="margin-top: 4px; color: #00d2ff; font-size: 0.78rem;">
               Capacity: ${bp.capacityTons.toLocaleString()}t | Speed: ${bp.maxSpeedKnots} kts | Fuel Burn: ${bp.fuelConsumptionTonsPerDay}t/day
             </p>
           </div>
-          <div>
+          <div style="text-align: right; min-width: 120px; flex-shrink: 0; margin-left: 10px;">
             <div class="catalog-price">$${bp.baseCost.toLocaleString()}</div>
-            <button class="btn ${canAfford ? 'btn-primary' : 'btn-secondary btn-disabled'} btn-sm btn-buy-ship">
-              Order Hull
+            <button class="btn ${canBuy ? 'btn-primary' : 'btn-secondary btn-disabled'} btn-sm btn-buy-ship">
+              ${isOutOfStock ? 'Fleet Limit' : 'Order Hull'}
             </button>
           </div>
         `;
@@ -919,6 +981,11 @@ export class UIManager {
         const buyBtn = item.querySelector('.btn-buy-ship') as HTMLElement;
         if (buyBtn) {
           buyBtn.addEventListener('click', () => {
+            if (isOutOfStock) {
+              sounds.playErrorBuzz();
+              this.showToast(`World fleet quota reached for ${bp.name} (${stock.inService}/${stock.totalCap} in service). As game days pass or owners sell, dockyard slips will open!`, 'warning');
+              return;
+            }
             if (!canAfford) {
               sounds.playErrorBuzz();
               this.showToast(`Insufficient capital & credit line to order ${bp.name}.`, 'error');
