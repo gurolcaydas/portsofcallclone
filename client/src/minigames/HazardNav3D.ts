@@ -94,23 +94,23 @@ export class HazardNav3D {
     }
   }
 
-  private createObstacle(type: 'iceberg' | 'reef', zPos: number) {
+  private createObstacle(type: 'iceberg' | 'reef', zPos: number, xPosOverride?: number) {
     const isIceberg = type === 'iceberg';
-    const xPos = (Math.random() - 0.5) * 150;
+    const xPos = xPosOverride !== undefined ? xPosOverride : (Math.random() - 0.5) * 110;
 
     let geo: THREE.BufferGeometry;
     let mat: THREE.Material;
 
     if (isIceberg) {
-      geo = new THREE.DodecahedronGeometry(13 + Math.random() * 9, 1);
+      geo = new THREE.DodecahedronGeometry(7.5 + Math.random() * 4, 1);
       mat = new THREE.MeshStandardMaterial({
-        color: 0xebf8ff,
-        roughness: 0.08,
-        metalness: 0.18,
+        color: 0xe0f2fe,
+        roughness: 0.12,
+        metalness: 0.22,
         flatShading: true
       });
     } else {
-      geo = new THREE.ConeGeometry(15 + Math.random() * 7, 24, 6);
+      geo = new THREE.ConeGeometry(8 + Math.random() * 4, 16, 6);
       mat = new THREE.MeshStandardMaterial({
         color: 0x5a4131,
         roughness: 0.85,
@@ -119,12 +119,15 @@ export class HazardNav3D {
     }
 
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(xPos, 6, zPos);
+    mesh.position.set(xPos, 5, zPos);
     mesh.rotation.set(Math.random(), Math.random(), Math.random());
     mesh.castShadow = true;
     this.scene.add(mesh);
 
-    const box = new THREE.Box3().setFromObject(mesh);
+    const box = new THREE.Box3().setFromCenterAndSize(
+      mesh.position,
+      new THREE.Vector3(12, 10, 12)
+    );
     this.obstacles.push({ mesh, box });
   }
 
@@ -172,7 +175,7 @@ export class HazardNav3D {
   ) {
     this.isFinished = false;
     this.hullDamage = 0;
-    this.distanceRemaining = 1800;
+    this.distanceRemaining = 1600;
     this.shipX = 0;
     this.activeKeys.clear();
 
@@ -194,13 +197,20 @@ export class HazardNav3D {
       this.shipGroup = null;
     }
     this.shipGroup = buildShip3DModel(shipType, playerColor);
+    // Scale ship to a natural, sleek size so it doesn't block the screen
+    this.shipGroup.scale.set(0.72, 0.72, 0.72);
     // Face forward along +Z towards oncoming obstacles
     this.shipGroup.rotation.y = Math.PI;
     this.scene.add(this.shipGroup);
 
-    // Spawn obstacles ahead in the distance
-    for (let z = 140; z < 2100; z += 95) {
-      this.createObstacle(hazardType, z);
+    // Spawn obstacles ahead with fair spacing and alternating navigable channels
+    let lastLane = 0;
+    for (let z = 180; z < 1900; z += 160) {
+      const lanes = [-48, -24, 0, 24, 48];
+      const availableLanes = lanes.filter((l) => Math.abs(l - lastLane) >= 30);
+      const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)] || (Math.random() - 0.5) * 90;
+      lastLane = lane;
+      this.createObstacle(hazardType, z, lane);
     }
 
     const titleEl = document.getElementById('hazard-title');
@@ -234,34 +244,37 @@ export class HazardNav3D {
   private update(dt: number, time: number) {
     if (!this.shipGroup) return;
 
-    const speed = 45; // Units per second forward
+    const speed = 40; // Controlled, realistic forward transit speed
     this.distanceRemaining -= speed * dt;
 
-    // Continuous responsive steering
-    const steerSpeed = 65 * dt;
+    // Fast, responsive steering
+    const steerSpeed = 95 * dt;
     if (this.activeKeys.has('a')) {
-      this.shipX = Math.max(-75, this.shipX - steerSpeed);
+      this.shipX = Math.max(-65, this.shipX - steerSpeed);
     }
     if (this.activeKeys.has('d')) {
-      this.shipX = Math.min(75, this.shipX + steerSpeed);
+      this.shipX = Math.min(65, this.shipX + steerSpeed);
     }
 
     // Move obstacles towards ship
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
       obs.mesh.position.z -= speed * dt;
-      obs.box.setFromObject(obs.mesh);
+      obs.box.setFromCenterAndSize(
+        obs.mesh.position,
+        new THREE.Vector3(12, 10, 12)
+      );
 
       const shipBox = new THREE.Box3().setFromCenterAndSize(
         this.shipGroup.position,
-        new THREE.Vector3(18, 10, 65)
+        new THREE.Vector3(10, 8, 38)
       );
 
       if (shipBox.intersectsBox(obs.box)) {
         sounds.playImpact();
-        this.hullDamage += 12;
-        obs.mesh.position.x += 45;
-        obs.box.setFromObject(obs.mesh);
+        this.hullDamage += 7; // Gentle scrape damage
+        obs.mesh.position.x += 40; // Deflect away
+        obs.box.setFromCenterAndSize(obs.mesh.position, new THREE.Vector3(12, 10, 12));
       }
 
       if (obs.mesh.position.z < -40) {
@@ -270,16 +283,15 @@ export class HazardNav3D {
       }
     }
 
-    // Ship position interpolation & dynamic banking
-    this.shipGroup.position.x += (this.shipX - this.shipGroup.position.x) * dt * 7;
+    // Crisp ship position interpolation & dynamic heel banking
+    this.shipGroup.position.x += (this.shipX - this.shipGroup.position.x) * dt * 11;
     this.shipGroup.position.z = 0;
-    // Bank ship slightly into turns
-    this.shipGroup.rotation.z = (this.shipX - this.shipGroup.position.x) * -0.025;
-    this.shipGroup.rotation.x = Math.sin(time * 0.003) * 0.035;
+    this.shipGroup.rotation.z = (this.shipX - this.shipGroup.position.x) * -0.035;
+    this.shipGroup.rotation.x = Math.sin(time * 0.003) * 0.025;
 
-    // Camera following smoothly behind vessel
-    this.camera.position.set(this.shipGroup.position.x * 0.55, 30, -75);
-    this.camera.lookAt(this.shipGroup.position.x * 0.75, 8, 80);
+    // High panoramic chase camera with broad forward lookahead
+    this.camera.position.set(this.shipGroup.position.x * 0.45, 48, -110);
+    this.camera.lookAt(this.shipGroup.position.x * 0.65, 8, 75);
 
     // Update HUD
     const distEl = document.getElementById('hazard-dist-left');
