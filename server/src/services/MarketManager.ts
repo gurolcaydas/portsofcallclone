@@ -20,7 +20,16 @@ export class MarketManager {
 
     for (let i = 0; i < count; i++) {
       const dest = destinationCandidates[Math.floor(Math.random() * destinationCandidates.length)];
-      const commodity = COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)];
+
+      // If origin has a passenger terminal, increase odds of passenger charters
+      let commodityList = [...COMMODITIES];
+      if (originPort.hasPassengerTerminal) {
+        // Boost passenger commodities in candidate pool
+        const passengerCommodities = COMMODITIES.filter(c => c.type.includes('passenger'));
+        commodityList = [...commodityList, ...passengerCommodities];
+      }
+
+      const commodity = commodityList[Math.floor(Math.random() * commodityList.length)];
       const distance = calculatePortDistance(originPort, dest);
 
       // Tonnage between minTonnage and minTonnage * 3
@@ -29,7 +38,12 @@ export class MarketManager {
       // Payment formula based on distance, commodity value multiplier, and tonnage
       // Base rate: ~$0.08 - $0.14 per ton-mile
       const ratePerTonMile = 0.09 + Math.random() * 0.05;
-      const basePay = Math.round(distance * tonnage * ratePerTonMile * commodity.valueMultiplier);
+
+      // Passenger prestige bonus if connecting two passenger-terminal ports
+      const isPassengerCharter = commodity.type.includes('passenger');
+      const passengerBonus = (isPassengerCharter && dest.hasPassengerTerminal) ? 1.25 : 1.0;
+
+      const basePay = Math.round(distance * tonnage * ratePerTonMile * commodity.valueMultiplier * passengerBonus);
       const payment = Math.round(basePay / 1000) * 1000; // Round to nearest thousand
 
       // Estimate voyage days at ~14 knots (14 knots * 24h = ~336 nautical miles/day)
@@ -91,14 +105,18 @@ export class MarketManager {
     if (Math.random() > 0.25) return null;
 
     const events: Array<{ headline: string; type: GlobalNewsItem['type'] }> = [
-      { headline: 'Suez Canal Authority announces routine maintenance; minor traffic queues reported.', type: 'info' },
-      { headline: 'Oil output quotas adjusted: Bunker fuel prices fluctuating globally.', type: 'market' },
-      { headline: 'Severe North Atlantic storm warning: High swell and gales between New York and London.', type: 'alert' },
-      { headline: 'Dockworkers union in Rotterdam strikes for 48 hours; port fees and handling impacted.', type: 'warning' },
-      { headline: 'Surge in grain harvests in South America drives bulk freight demand in Santos.', type: 'market' },
-      { headline: 'Singapore opens automated deepwater container terminal expansion.', type: 'info' },
-      { headline: 'Iceberg alert issued off Newfoundland; watch officers advised high alert.', type: 'alert' },
-      { headline: 'Panama Canal water levels stabilize; full draft transits resumed.', type: 'info' }
+      { headline: 'Suez Canal Authority reports smooth convoys; Mediterranean-Asia trade flowing freely.', type: 'info' },
+      { headline: 'OPEC oil output quotas adjusted: Bunker fuel prices fluctuating globally.', type: 'market' },
+      { headline: 'Severe North Atlantic storm warning: High swell and gale-force winds between New York and London.', type: 'alert' },
+      { headline: 'Port of Rotterdam automates terminal gate logistics; turnaround times improved.', type: 'info' },
+      { headline: 'Surge in South American soybean harvests boosts bulk freight rates out of Santos and Buenos Aires.', type: 'market' },
+      { headline: 'Singapore Tuas Mega-Port commission phase opens, offering lowest bunker refuel rates.', type: 'info' },
+      { headline: 'Iceberg alert issued off the Grand Banks of Newfoundland; watch officers advised caution.', type: 'alert' },
+      { headline: 'Panama Canal expands daily transit slots; container wait times reduced.', type: 'info' },
+      { headline: 'Peak luxury cruise season kicks off in Miami and Barcelona; passenger charters soaring.', type: 'market' },
+      { headline: 'Typhoon season warnings in the South China Sea between Hong Kong, Manila, and Kaohsiung.', type: 'alert' },
+      { headline: 'Piraeus and Aegean ferry networks report record summer tourist passenger volumes.', type: 'market' },
+      { headline: 'Gulf energy demand surges: Houston and Jebel Ali tanker shipments at all-time high.', type: 'market' }
     ];
 
     const chosen = events[Math.floor(Math.random() * events.length)];

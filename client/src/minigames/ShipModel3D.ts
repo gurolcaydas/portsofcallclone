@@ -336,6 +336,95 @@ export function buildShip3DModel(type: string, playerColor: string = '#00d2ff'):
       break;
     }
 
+    case 'passenger':
+    case 'ocean_liner': {
+      // 6. Transatlantic Luxury Cruise Liner (Tiered passenger superstructure, lifeboats, twin funnels)
+      // Antifouling Keel
+      const keel = new THREE.Mesh(new THREE.BoxGeometry(18, 5, 82), redKeelMat);
+      keel.position.y = 1.2;
+      ship.add(keel);
+
+      // Streamlined Main Hull
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(20, 7.5, 86), darkSteelMat);
+      hull.position.y = 6.2;
+      hull.castShadow = true;
+      ship.add(hull);
+
+      // Vivid Hull Company Stripe
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(20.5, 1.4, 86.2), companyMat);
+      stripe.position.y = 8.5;
+      ship.add(stripe);
+
+      // Main Promenade Deck 1
+      const deck1 = new THREE.Mesh(new THREE.BoxGeometry(19, 4.5, 78), whiteMat);
+      deck1.position.set(0, 11.8, 2);
+      ship.add(deck1);
+
+      // Window Strips Deck 1
+      const win1L = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 70), windowMat);
+      win1L.position.set(9.6, 12.2, 2);
+      ship.add(win1L);
+      const win1R = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 70), windowMat);
+      win1R.position.set(-9.6, 12.2, 2);
+      ship.add(win1R);
+
+      // Promenade Deck 2 (Cabins & Lifeboats)
+      const deck2 = new THREE.Mesh(new THREE.BoxGeometry(17.5, 4.2, 66), whiteMat);
+      deck2.position.set(0, 15.8, 4);
+      ship.add(deck2);
+
+      // Lifeboat rows along port & starboard
+      const lifeboatMat = new THREE.MeshStandardMaterial({ color: 0xffa502, roughness: 0.3 });
+      for (let z = -20; z <= 24; z += 11) {
+        // Port Lifeboat
+        const lbPort = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 6.5), lifeboatMat);
+        lbPort.position.set(9.4, 17.5, z);
+        ship.add(lbPort);
+        // Starboard Lifeboat
+        const lbStbd = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 6.5), lifeboatMat);
+        lbStbd.position.set(-9.4, 17.5, z);
+        ship.add(lbStbd);
+      }
+
+      // Upper Lido & Staterooms Deck 3
+      const deck3 = new THREE.Mesh(new THREE.BoxGeometry(15, 3.8, 52), whiteMat);
+      deck3.position.set(0, 19.6, 6);
+      ship.add(deck3);
+
+      // Forward Navigational Bridge
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(16.5, 3.2, 10), whiteMat);
+      bridge.position.set(0, 20.2, -18);
+      ship.add(bridge);
+      const bridgeWin = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.4, 1.2), windowMat);
+      bridgeWin.position.set(0, 20.6, -22.6);
+      ship.add(bridgeWin);
+
+      // Twin Streamlined Funnels in Company Color
+      for (const z of [2, 18]) {
+        const funnel = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.2, 9, 14), companyMat);
+        funnel.position.set(0, 25.5, z);
+        funnel.rotation.x = -0.15; // Raked aerodynamic look
+        ship.add(funnel);
+
+        const funnelTop = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 1.8, 14), darkSteelMat);
+        funnelTop.position.set(0, 29.8, z - 0.6);
+        funnelTop.rotation.x = -0.15;
+        ship.add(funnelTop);
+      }
+
+      // Radar Mast
+      const mast = new THREE.Mesh(new THREE.BoxGeometry(0.8, 7, 0.8), mastMat);
+      mast.position.set(0, 24, -14);
+      ship.add(mast);
+
+      // Sun Canopy / Observation Dome
+      const domeMat = new THREE.MeshStandardMaterial({ color: 0x00d2ff, roughness: 0.2, transparent: true, opacity: 0.8 });
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(3.5, 12, 10), domeMat);
+      dome.position.set(0, 21.8, 25);
+      ship.add(dome);
+      break;
+    }
+
     default: {
       // Fallback
       const hull = new THREE.Mesh(new THREE.BoxGeometry(18, 7, 75), darkSteelMat);

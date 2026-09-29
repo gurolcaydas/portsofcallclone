@@ -399,14 +399,14 @@ export class UIManager {
         </div>
 
         <div class="ship-cargo-box">
-          <h5>CARGO MANIFEST</h5>
+          <h5>${ship.cargo && (ship.cargo.commodity.toLowerCase().includes('passenger') || ship.cargo.commodity.toLowerCase().includes('cruise') || ship.cargo.commodity.toLowerCase().includes('tour')) ? 'PASSENGER MANIFEST' : 'CARGO MANIFEST'}</h5>
           ${
             ship.cargo
               ? `
-            <div class="cargo-active-line">📦 ${ship.cargo.tonnage.toLocaleString()}t ${ship.cargo.commodity}</div>
+            <div class="cargo-active-line">${ship.cargo.commodity.toLowerCase().includes('passenger') || ship.cargo.commodity.toLowerCase().includes('cruise') || ship.cargo.commodity.toLowerCase().includes('tour') ? '🚢' : '📦'} ${ship.cargo.tonnage.toLocaleString()}${ship.cargo.commodity.toLowerCase().includes('passenger') || ship.cargo.commodity.toLowerCase().includes('cruise') || ship.cargo.commodity.toLowerCase().includes('tour') ? ' pax' : 't'} ${ship.cargo.commodity}</div>
             <div class="cargo-payout-line">Payout: +$${ship.cargo.payment.toLocaleString()} (Due Day ${ship.cargo.deadlineDay})</div>
           `
-              : `<div class="text-muted">Holds empty. Available for chartering.</div>`
+              : `<div class="text-muted">Holds & cabins empty. Available for charter.</div>`
           }
         </div>
 
@@ -591,10 +591,13 @@ export class UIManager {
     if (!currentShip || !currentShip.currentPortId) return;
 
     if (currentShip.cargo) {
+      const isPaxCargo = currentShip.cargo.commodity.toLowerCase().includes('passenger') ||
+                         currentShip.cargo.commodity.toLowerCase().includes('cruise') ||
+                         currentShip.cargo.commodity.toLowerCase().includes('tour');
       container.innerHTML = `
         <div class="glass-panel" style="padding: 2rem; grid-column: 1 / -1; text-align: center;">
-          <h3>Holds Already Loaded</h3>
-          <p class="text-secondary">${currentShip.name} is carrying ${currentShip.cargo.tonnage.toLocaleString()}t of ${currentShip.cargo.commodity}. Cast off to deliver this freight!</p>
+          <h3>${isPaxCargo ? 'Passengers Already Embarked' : 'Holds Already Loaded'}</h3>
+          <p class="text-secondary">${currentShip.name} is carrying ${currentShip.cargo.tonnage.toLocaleString()}${isPaxCargo ? ' passengers on ' : 't of '}${currentShip.cargo.commodity}. Cast off to deliver this ${isPaxCargo ? 'voyage' : 'freight'}!</p>
           <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 1.25rem; flex-wrap: wrap;">
             <button id="btn-broker-sail" class="btn btn-success">Cast Off Now</button>
             <button id="btn-broker-back-loaded" class="btn btn-primary">⬅ Return to Fleet Management</button>
@@ -619,7 +622,7 @@ export class UIManager {
     if (portContracts.length === 0) {
       container.innerHTML = `
         <div class="glass-panel" style="padding: 2rem; grid-column: 1 / -1; text-align: center;">
-          <h3>No Freights Available in ${originPort?.name}</h3>
+          <h3>No Freights or Passenger Charters Available in ${originPort?.name}</h3>
           <p class="text-secondary">All local charter requests have been chartered. Wait for the market refresh.</p>
           <button id="btn-broker-back-empty" class="btn btn-primary btn-sm" style="margin-top: 1.25rem;">
             ⬅ Return to Fleet Management
@@ -637,21 +640,26 @@ export class UIManager {
       card.className = 'contract-card';
 
       const canCarry = contract.tonnage <= bp.capacityTons;
+      const isPax = contract.commodity.toLowerCase().includes('passenger') ||
+                    contract.commodity.toLowerCase().includes('cruise') ||
+                    contract.commodity.toLowerCase().includes('tour');
+      const icon = isPax ? '🚢' : '📦';
+      const payloadLabel = isPax ? 'Passengers' : 'Tonnage';
 
       card.innerHTML = `
-        <div class="contract-cargo-name">📦 ${contract.commodity}</div>
+        <div class="contract-cargo-name">${icon} ${contract.commodity}</div>
         <div class="contract-route">
           <span>${originPort?.name}</span> ➔ <strong>${destPort?.name}</strong>
         </div>
         <div class="contract-specs">
-          <div>Tonnage: <strong>${contract.tonnage.toLocaleString()}t</strong></div>
+          <div>${payloadLabel}: <strong>${contract.tonnage.toLocaleString()}${isPax ? ' pax' : 't'}</strong></div>
           <div>Distance: <strong>${contract.distanceNauticalMiles.toLocaleString()} nm</strong></div>
           <div>Deadline: <strong>Day ${contract.deadlineDay}</strong></div>
           <div>Expires: <strong>Day ${contract.expiryDay}</strong></div>
         </div>
         <div class="contract-payout">+$${contract.payment.toLocaleString()}</div>
         <button class="btn ${canCarry ? 'btn-primary' : 'btn-secondary btn-disabled'} btn-sm btn-accept-contract">
-          ${canCarry ? 'Book Charter' : 'Capacity Exceeded'}
+          ${canCarry ? (isPax ? 'Embark Passengers' : 'Book Charter') : 'Capacity Exceeded'}
         </button>
       `;
 
@@ -660,7 +668,7 @@ export class UIManager {
         btn.addEventListener('click', () => {
           if (!canCarry) {
             sounds.playErrorBuzz();
-            this.showToast(`Cargo tonnage (${contract.tonnage.toLocaleString()}t) exceeds ship capacity (${bp.capacityTons.toLocaleString()}t)!`, 'warning');
+            this.showToast(`${isPax ? 'Passenger count' : 'Cargo tonnage'} (${contract.tonnage.toLocaleString()}${isPax ? ' pax' : 't'}) exceeds ship capacity (${bp.capacityTons.toLocaleString()}t)!`, 'warning');
             return;
           }
           this.network.acceptCharter(currentShip.id, contract.id);

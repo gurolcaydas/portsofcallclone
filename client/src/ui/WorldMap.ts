@@ -223,15 +223,29 @@ export class WorldMap {
         `;
       }
 
+      const catBadge = port.category === 'passenger'
+        ? '<span style="background: rgba(255,107,129,0.2); color: #ff6b81; border: 1px solid #ff6b81; font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-weight: 700;">🚢 CRUISE & PASSENGER HUB</span>'
+        : port.category === 'mixed'
+        ? '<span style="background: rgba(0,210,255,0.15); color: #00d2ff; border: 1px solid #00d2ff; font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-weight: 700;">⚓ COMMERCIAL & PASSENGER</span>'
+        : '<span style="background: rgba(46,213,115,0.15); color: #2ed573; border: 1px solid #2ed573; font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-weight: 700;">📦 FREIGHT MEGA-PORT</span>';
+
+      const throughputStr = [
+        port.annualCargoTonnageMillions ? `${port.annualCargoTonnageMillions}M tons` : '',
+        port.annualPassengersThousands ? `${(port.annualPassengersThousands / 1000).toFixed(1)}M passengers` : ''
+      ].filter(Boolean).join(' • ');
+
       this.tooltipEl.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
           <strong style="color: #fff; font-size: 0.95rem; font-family: 'Chakra Petch', sans-serif;">⚓ ${port.name}</strong>
           <span style="font-size: 0.7rem; color: #7f9bb6;">${port.country}</span>
         </div>
+        <div style="margin-bottom: 6px;">${catBadge}</div>
         <div style="font-size: 0.74rem; color: #a0c0e0; display: flex; flex-direction: column; gap: 2px;">
           <div>Bunker Fuel: <strong style="color: #ffa502;">$${fuelPrice} / ton</strong></div>
           <div>Drydock Facility: <strong style="color: ${port.hasDrydock ? '#2ed573' : '#ff4757'};">${port.hasDrydock ? 'Available' : 'None'}</strong></div>
+          <div>Passenger Terminal: <strong style="color: ${port.hasPassengerTerminal ? '#2ed573' : '#a0c0e0'};">${port.hasPassengerTerminal ? 'Dedicated Terminal 🚢' : 'Cargo Only 📦'}</strong></div>
           <div>Port Berth Fee: <strong style="color: #fff;">$${port.portFeePerCall.toLocaleString()}</strong></div>
+          ${throughputStr ? `<div style="font-size: 0.7rem; color: #8da4be; margin-top: 2px;">Annual Volume: <strong style="color: #e2f0fc;">${throughputStr}</strong></div>` : ''}
         </div>
         ${berthedHtml}
         <div style="font-size: 0.68rem; color: #00d2ff; margin-top: 6px; font-style: italic;">
@@ -368,20 +382,80 @@ export class WorldMap {
     ctx.setLineDash([3, 5]);
 
     const routePairs: Array<[string, string]> = [
+      // North Atlantic & Transatlantic
       ['newyork', 'rotterdam'],
       ['newyork', 'london'],
-      ['rotterdam', 'gibraltar'],
-      ['gibraltar', 'alexandria'],
-      ['alexandria', 'dubai'],
-      ['dubai', 'singapore'],
+      ['miami', 'barcelona'],
+      ['savannah', 'rotterdam'],
+      ['rotterdam', 'hamburg'],
+      ['rotterdam', 'antwerp'],
+
+      // Mediterranean, Suez & Red Sea Corridor
+      ['london', 'algeciras'],
+      ['algeciras', 'valencia'],
+      ['valencia', 'barcelona'],
+      ['barcelona', 'marseille'],
+      ['marseille', 'genoa'],
+      ['genoa', 'piraeus'],
+      ['piraeus', 'istanbul'],
+      ['piraeus', 'portsaid'],
+      ['portsaid', 'jeddah'],
+      ['jeddah', 'dubai'],
+
+      // Indian Ocean & Arabian Sea
+      ['dubai', 'mumbai'],
+      ['mumbai', 'colombo'],
+      ['chennai', 'colombo'],
+      ['colombo', 'singapore'],
+      ['portsaid', 'colombo'],
+
+      // Southeast Asia & Far East
+      ['singapore', 'portklang'],
+      ['singapore', 'jakarta'],
+      ['singapore', 'laemchabang'],
       ['singapore', 'hongkong'],
-      ['hongkong', 'shanghai'],
-      ['shanghai', 'tokyo'],
-      ['panama', 'newyork'],
-      ['panama', 'tokyo'],
-      ['santos', 'rotterdam'],
-      ['capetown', 'singapore'],
-      ['sydney', 'singapore']
+      ['hongkong', 'manila'],
+      ['hongkong', 'shenzhen'],
+      ['shenzhen', 'guangzhou'],
+      ['hongkong', 'kaohsiung'],
+      ['hongkong', 'xiamen'],
+      ['xiamen', 'ningbo'],
+      ['ningbo', 'shanghai'],
+      ['shanghai', 'qingdao'],
+      ['qingdao', 'tianjin'],
+      ['shanghai', 'busan'],
+      ['busan', 'tokyo'],
+
+      // Transpacific Trade
+      ['tokyo', 'losangeles'],
+      ['shanghai', 'losangeles'],
+      ['busan', 'seattle'],
+      ['seattle', 'vancouver'],
+      ['losangeles', 'longbeach'],
+
+      // Americas, Caribbean & Panama Canal
+      ['losangeles', 'panama'],
+      ['panama', 'houston'],
+      ['panama', 'miami'],
+      ['miami', 'newyork'],
+      ['houston', 'newyork'],
+
+      // South America & South Atlantic
+      ['miami', 'santos'],
+      ['santos', 'buenosaires'],
+      ['santos', 'algeciras'],
+      ['santos', 'capetown'],
+
+      // African Coast & Indian Ocean
+      ['capetown', 'durban'],
+      ['durban', 'colombo'],
+      ['durban', 'singapore'],
+      ['algeciras', 'capetown'],
+
+      // Oceania
+      ['singapore', 'sydney'],
+      ['sydney', 'melbourne'],
+      ['jakarta', 'sydney']
     ];
 
     for (const [id1, id2] of routePairs) {
@@ -564,18 +638,19 @@ export class WorldMap {
       const isHovered = this.hoveredPort?.id === port.id;
       const dockedShips = dockedByPort[port.id] || [];
 
-      // Beacon glow
-      ctx.shadowColor = isHovered ? '#00d2ff' : 'rgba(0, 210, 255, 0.4)';
+      // Beacon glow & color
+      const beaconColor = isHovered ? '#ffffff' : (port.category === 'passenger' ? '#ff6b81' : '#00d2ff');
+      ctx.shadowColor = isHovered ? '#00d2ff' : (port.category === 'passenger' ? 'rgba(255, 107, 129, 0.5)' : 'rgba(0, 210, 255, 0.4)');
       ctx.shadowBlur = isHovered ? 16 : 8;
 
-      ctx.fillStyle = isHovered ? '#ffffff' : '#00d2ff';
+      ctx.fillStyle = beaconColor;
       ctx.beginPath();
-      ctx.arc(px, py, isHovered ? 6 : 4, 0, Math.PI * 2);
+      ctx.arc(px, py, isHovered ? 6 : (port.category === 'passenger' ? 4.5 : 4), 0, Math.PI * 2);
       ctx.fill();
 
       // Outer ripple animation if hovered
       if (isHovered) {
-        ctx.strokeStyle = '#00d2ff';
+        ctx.strokeStyle = beaconColor;
         ctx.lineWidth = 1.5;
         const r = 6 + (Math.sin(time * 0.008) + 1) * 3;
         ctx.beginPath();
@@ -588,7 +663,8 @@ export class WorldMap {
       // Port Name Label
       ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(232, 244, 252, 0.75)';
       ctx.font = isHovered ? '700 11px Chakra Petch' : '500 9px Chakra Petch';
-      ctx.fillText(port.name, px + 8, py + 3);
+      const labelText = isHovered && port.hasPassengerTerminal ? `🚢 ${port.name}` : port.name;
+      ctx.fillText(labelText, px + 8, py + 3);
 
       // Docked Vessels Harbor Badge
       if (dockedShips.length > 0) {

@@ -268,6 +268,94 @@ export function getShipIllustrationSVG(type: string, companyColor: string = '#00
         <rect x="326" y="10" width="7" height="3" fill="#1e272e"/>
       </svg>`;
 
+    case 'passenger':
+    case 'ocean_liner':
+      return `
+      <svg viewBox="0 0 360 120" class="ship-svg-illustration" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="liner-sea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#092644"/>
+            <stop offset="100%" stop-color="#051426"/>
+          </linearGradient>
+          <linearGradient id="liner-hull" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0f1923"/>
+            <stop offset="60%" stop-color="#1c2b38"/>
+            <stop offset="100%" stop-color="#0f1923"/>
+          </linearGradient>
+        </defs>
+        <!-- Waterline -->
+        <rect x="0" y="90" width="360" height="30" fill="url(#liner-sea)" opacity="0.6"/>
+        <path d="M0 90 Q 90 88 180 90 T 360 90" stroke="#00d2ff" stroke-width="1.5" fill="none" opacity="0.4"/>
+
+        <!-- Antifouling Keel -->
+        <path d="M25 90 L45 104 L315 104 L335 90 Z" fill="#9e1a1a"/>
+
+        <!-- Streamlined Hull -->
+        <path d="M18 68 Q 32 90 45 90 L 315 90 Q 330 90 342 68 L 336 62 L 28 62 Z" fill="url(#liner-hull)"/>
+        <!-- Company Stripe -->
+        <path d="M22 65 L 340 65 L 338 69 L 24 69 Z" fill="${companyColor}"/>
+
+        <!-- Lower Promenade Deck -->
+        <rect x="52" y="52" width="270" height="10" fill="#f8f9fa" rx="1"/>
+        <!-- Row of Stateroom Windows (Lower) -->
+        <g fill="#00d2ff" opacity="0.85">
+          <circle cx="65" cy="57" r="1.5"/><circle cx="75" cy="57" r="1.5"/><circle cx="85" cy="57" r="1.5"/><circle cx="95" cy="57" r="1.5"/>
+          <circle cx="105" cy="57" r="1.5"/><circle cx="115" cy="57" r="1.5"/><circle cx="125" cy="57" r="1.5"/><circle cx="135" cy="57" r="1.5"/>
+          <circle cx="145" cy="57" r="1.5"/><circle cx="155" cy="57" r="1.5"/><circle cx="165" cy="57" r="1.5"/><circle cx="175" cy="57" r="1.5"/>
+          <circle cx="185" cy="57" r="1.5"/><circle cx="195" cy="57" r="1.5"/><circle cx="205" cy="57" r="1.5"/><circle cx="215" cy="57" r="1.5"/>
+          <circle cx="225" cy="57" r="1.5"/><circle cx="235" cy="57" r="1.5"/><circle cx="245" cy="57" r="1.5"/><circle cx="255" cy="57" r="1.5"/>
+          <circle cx="265" cy="57" r="1.5"/><circle cx="275" cy="57" r="1.5"/><circle cx="285" cy="57" r="1.5"/><circle cx="295" cy="57" r="1.5"/>
+          <circle cx="305" cy="57" r="1.5"/>
+        </g>
+
+        <!-- Mid Promenade & Lifeboats Deck -->
+        <rect x="68" y="42" width="245" height="10" fill="#f1f2f6" rx="1"/>
+        <!-- Lifeboats -->
+        <g fill="#ffa502">
+          <rect x="75" y="45" width="12" height="4" rx="2"/>
+          <rect x="92" y="45" width="12" height="4" rx="2"/>
+          <rect x="109" y="45" width="12" height="4" rx="2"/>
+          <rect x="126" y="45" width="12" height="4" rx="2"/>
+          <rect x="250" y="45" width="12" height="4" rx="2"/>
+          <rect x="267" y="45" width="12" height="4" rx="2"/>
+          <rect x="284" y="45" width="12" height="4" rx="2"/>
+        </g>
+
+        <!-- Upper Cabin & Balconies Deck -->
+        <rect x="85" y="32" width="215" height="10" fill="#ffffff" rx="1"/>
+        <g fill="#00d2ff" opacity="0.9">
+          <rect x="95" y="35" width="3" height="4" rx="0.5"/><rect x="105" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="115" y="35" width="3" height="4" rx="0.5"/><rect x="125" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="135" y="35" width="3" height="4" rx="0.5"/><rect x="145" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="155" y="35" width="3" height="4" rx="0.5"/><rect x="165" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="175" y="35" width="3" height="4" rx="0.5"/><rect x="185" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="195" y="35" width="3" height="4" rx="0.5"/><rect x="205" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="215" y="35" width="3" height="4" rx="0.5"/><rect x="225" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="235" y="35" width="3" height="4" rx="0.5"/><rect x="245" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="255" y="35" width="3" height="4" rx="0.5"/><rect x="265" y="35" width="3" height="4" rx="0.5"/>
+          <rect x="275" y="35" width="3" height="4" rx="0.5"/><rect x="285" y="35" width="3" height="4" rx="0.5"/>
+        </g>
+
+        <!-- Forward Bridge & Observation Lounge -->
+        <path d="M70 42 L 85 30 L 120 30 L 120 42 Z" fill="#ffffff"/>
+        <!-- Bridge Panoramic Glass -->
+        <path d="M74 40 L 86 32 L 105 32 L 105 40 Z" fill="#00d2ff"/>
+
+        <!-- Top Sun Deck & Pool Pavilion -->
+        <rect x="125" y="24" width="130" height="8" fill="#e4e7eb" rx="1"/>
+
+        <!-- Twin Streamlined Funnels in Company Color -->
+        <path d="M150 10 L 164 10 L 158 24 L 146 24 Z" fill="${companyColor}"/>
+        <rect x="149" y="10" width="15" height="3" fill="#1e272e"/>
+        <path d="M178 10 L 192 10 L 186 24 L 174 24 Z" fill="${companyColor}"/>
+        <rect x="177" y="10" width="15" height="3" fill="#1e272e"/>
+
+        <!-- Radar Dome & Main Mast -->
+        <line x1="110" y1="30" x2="110" y2="16" stroke="#ced6e0" stroke-width="2"/>
+        <circle cx="110" cy="15" r="3" fill="#f1f2f6"/>
+        <circle cx="225" cy="21" r="2.5" fill="#f1f2f6"/>
+      </svg>`;
+
     default:
       return '';
   }
