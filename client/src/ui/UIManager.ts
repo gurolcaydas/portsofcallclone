@@ -104,10 +104,10 @@ export class UIManager {
       const next = document.getElementById(nextId);
       const slider = document.getElementById(sliderId);
       if (prev && slider) {
-        prev.onclick = () => slider.scrollBy({ left: -260, behavior: 'smooth' });
+        prev.onclick = () => slider.scrollBy({ left: -190, behavior: 'smooth' });
       }
       if (next && slider) {
-        next.onclick = () => slider.scrollBy({ left: 260, behavior: 'smooth' });
+        next.onclick = () => slider.scrollBy({ left: 190, behavior: 'smooth' });
       }
     };
 
@@ -188,6 +188,14 @@ export class UIManager {
         }
       });
     });
+
+    // Auto-scroll active card into visible track area
+    const activeCard = container.querySelector('.vessel-selector-card.active') as HTMLElement | null;
+    if (activeCard) {
+      setTimeout(() => {
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }, 50);
+    }
   }
 
   private setupPortModal() {

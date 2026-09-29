@@ -1414,29 +1414,34 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 .vessel-slider-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  margin-bottom: 1.25rem;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 1rem;
   position: relative;
+  box-sizing: border-box;
 }
 
 .vessel-slider-wrapper.shipyard-slider {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .vessel-slider-track {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 210, 255, 0.3) rgba(5, 12, 22, 0.4);
-  padding: 4px 2px 10px 2px;
+  padding: 4px 2px 8px 2px;
   width: 100%;
+  min-width: 0;
+  flex: 1 1 0;
 }
 
 .vessel-slider-track::-webkit-scrollbar {
-  height: 6px;
+  height: 5px;
 }
 
 .vessel-slider-track::-webkit-scrollbar-track {
@@ -1454,14 +1459,14 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   border: 1px solid rgba(0, 210, 255, 0.35);
   color: #00d2ff;
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   transition: all 0.2s ease;
   z-index: 5;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -1478,18 +1483,19 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 .vessel-selector-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 250px;
-  max-width: 300px;
+  gap: 8px;
+  min-width: 180px;
+  max-width: 205px;
   flex: 0 0 auto;
-  padding: 10px 14px;
+  padding: 6px 10px;
   background: rgba(10, 22, 38, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
   position: relative;
+  box-sizing: border-box;
 }
 
 .vessel-selector-card:hover {
@@ -1506,12 +1512,12 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 }
 
 .vsc-icon-wrap {
-  width: 68px;
-  height: 44px;
-  min-width: 68px;
+  width: 48px;
+  height: 32px;
+  min-width: 48px;
   background: rgba(5, 12, 22, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1528,7 +1534,7 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 .vsc-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   overflow: hidden;
   flex: 1;
 }
@@ -1537,30 +1543,31 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
 }
 
 .vsc-name {
-  font-size: 0.92rem;
+  font-size: 0.8rem;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  font-weight: 600;
 }
 
 .vsc-active-pill {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 800;
   color: #030a14;
   background: #00d2ff;
-  padding: 1px 5px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
 }
 
 .vsc-specs {
-  font-size: 0.74rem;
+  font-size: 0.67rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1568,14 +1575,14 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 }
 
 .vsc-status-row {
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .vsc-badge {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
   white-space: nowrap;
   display: inline-block;
 }
@@ -1682,15 +1689,23 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
    ========================================================= */
 .shipyard-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  align-items: start;
+  box-sizing: border-box;
 }
 
 .shipyard-col {
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .shipyard-col h3 {
