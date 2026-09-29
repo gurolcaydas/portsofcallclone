@@ -16,7 +16,7 @@ export class GameRoom {
   private io: Server;
   private tickTimer: NodeJS.Timeout | null = null;
 
-  constructor(roomCode: string, hostId: string, io: Server) {
+  constructor(roomCode: string, hostId: string, io: Server, allowLateJoin: boolean = true) {
     this.io = io;
     const initialBunkerPrices: Record<string, number> = {};
     for (const port of WORLD_PORTS) {
@@ -32,6 +32,8 @@ export class GameRoom {
       players: {},
       availableContracts: MarketManager.generateInitialMarket(1),
       bunkerPrices: initialBunkerPrices,
+      allowLateJoin: allowLateJoin !== false,
+      createdAt: Date.now(),
       newsFeed: [
         {
           id: 'news_init',
@@ -114,6 +116,7 @@ export class GameRoom {
   public startGame(): boolean {
     if (this.state.status === 'playing') return false;
     this.state.status = 'playing';
+    this.state.startedAt = Date.now();
 
     // Broadcast starting state
     this.broadcastState();

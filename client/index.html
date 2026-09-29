@@ -68,11 +68,35 @@
           </div>
 
           <div class="lobby-tabs">
-            <button id="tab-host" class="tab-btn active">Found New Company (Host)</button>
-            <button id="tab-join" class="tab-btn">Join Syndicate (Enter Code)</button>
+            <button id="tab-browse" class="tab-btn active">🚢 Live Fleets (Browser)</button>
+            <button id="tab-host" class="tab-btn">⚓ Found Company (Host)</button>
+            <button id="tab-join" class="tab-btn">🔑 Enter Code</button>
           </div>
 
-          <div id="panel-host" class="tab-panel active">
+          <!-- Panel 1: Live Public Rooms Browser -->
+          <div id="panel-browse" class="tab-panel active">
+            <div class="browser-header">
+              <div class="browser-title-wrap">
+                <h3>Global Active Voyages</h3>
+                <span id="browser-room-count" class="room-count-badge">Searching...</span>
+              </div>
+              <button id="btn-refresh-rooms" class="btn btn-secondary btn-sm" title="Refresh room list">
+                🔄 Refresh
+              </button>
+            </div>
+
+            <div class="browser-player-bar">
+              <label for="input-browser-company">Your Company Name:</label>
+              <input type="text" id="input-browser-company" value="Oceanic Trader" maxlength="28" placeholder="Company Name">
+            </div>
+
+            <div id="browser-room-list" class="room-list-container">
+              <!-- Dynamically populated with active rooms -->
+            </div>
+          </div>
+
+          <!-- Panel 2: Found New Company / Host -->
+          <div id="panel-host" class="tab-panel">
             <div class="form-group">
               <label for="input-host-company">Shipping Line Name</label>
               <input type="text" id="input-host-company" value="Transatlantic Star" maxlength="28" placeholder="e.g. Blue Star Maritime">
@@ -87,9 +111,20 @@
                 <button type="button" class="color-dot" data-color="#9b59b6" style="background: #9b59b6;"></button>
               </div>
             </div>
-            <button id="btn-create-room" class="btn btn-primary btn-glow">Establish Shipping Line</button>
+            <div class="form-group checkbox-group">
+              <label class="toggle-checkbox-label">
+                <input type="checkbox" id="check-allow-late-join" checked>
+                <span class="custom-checkbox"></span>
+                <span class="toggle-text">
+                  <strong>Allow New Captains to Join After Departure</strong>
+                  <small>Newcomers can discover and join your fleet while voyage is underway.</small>
+                </span>
+              </label>
+            </div>
+            <button id="btn-create-room" class="btn btn-primary btn-glow">Establish Shipping Line & Room</button>
           </div>
 
+          <!-- Panel 3: Join via 4-Letter Code -->
           <div id="panel-join" class="tab-panel">
             <div class="form-group">
               <label for="input-join-code">4-Letter Room Code</label>

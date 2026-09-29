@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { GameRoom } from './GameRoom.js';
+import { PublicRoomInfo } from '@portofcall/shared';
 
 export interface SessionRecord {
   roomCode: string;
@@ -30,10 +31,48 @@ export class RoomManager {
     return 'tok_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
   }
 
-  public createRoom(socket: Socket, companyName: string, color: string) {
+  public getPublicRoomList(): PublicRoomInfo[] {
+    const list: PublicRoomInfo[] = [];
+    for (const [code, room] of this.rooms.entries()) {
+      if (room.state.status === 'gameover') continue;
+
+      const players = Object.values(room.state.players);
+      const host = room.state.players[room.state.hostId];
+      const isOpen =
+        room.state.status === 'lobby' ||
+        (room.state.status === 'playing' && room.state.allowLateJoin !== false && players.length < 8);
+
+      list.push({
+        roomCode: code,
+        hostName: host ? host.name : 'Unknown Captain',
+        status: room.state.status,
+        playerCount: players.length,
+        maxPlayers: 8,
+        playerNames: players.map((p) => p.name),
+        currentDay: room.state.currentDay,
+        createdAt: room.state.createdAt || Date.now(),
+        startedAt: room.state.startedAt,
+        allowLateJoin: room.state.allowLateJoin !== false,
+        isOpen
+      });
+    }
+
+    return list.sort((a, b) => {
+      if (a.isOpen && !b.isOpen) return -1;
+      if (!a.isOpen && b.isOpen) return 1;
+      return b.createdAt - a.createdAt;
+    });
+  }
+
+  public broadcastRoomList() {
+    const list = this.getPublicRoomList();
+    this.io.emit('room:list_update', list);
+  }
+
+  public createRoom(socket: Socket, companyName: string, color: string, allowLateJoin: boolean = true) {
     const roomCode = this.generateCode();
     const sessionToken = this.generateSessionToken();
-    const room = new GameRoom(roomCode, socket.id, this.io);
+    const room = new GameRoom(roomCode, socket.id, this.io, allowLateJoin);
     const player = room.addPlayer(socket.id, companyName, color, sessionToken);
 
     this.rooms.set(roomCode, room);
@@ -41,6 +80,7 @@ export class RoomManager {
     this.sessionTokens.set(sessionToken, { roomCode, playerId: socket.id });
     socket.join(roomCode);
 
+    this.broadcastRoomList();
     return { roomCode, player, room, sessionToken };
   }
 
@@ -53,6 +93,14 @@ export class RoomManager {
 
     if (room.state.status === 'gameover') {
       return { success: false, error: 'This game has ended' };
+    }
+
+    if (room.state.status === 'playing' && room.state.allowLateJoin === false) {
+      return { success: false, error: 'This voyage has already departed and is closed to new shipping lines.' };
+    }
+
+    if (Object.keys(room.state.players).length >= 8) {
+      return { success: false, error: 'This shipping syndicate is currently full (maximum 8 fleets).' };
     }
 
     // Cancel any pending room cleanup timer since active join occurred
@@ -68,6 +116,7 @@ export class RoomManager {
     this.sessionTokens.set(sessionToken, { roomCode: normalizedCode, playerId: socket.id });
     socket.join(normalizedCode);
 
+    this.broadcastRoomList();
     return { success: true, player, room, roomCode: normalizedCode, sessionToken };
   }
 
@@ -133,12 +182,14 @@ export class RoomManager {
               room.stop();
               this.rooms.delete(code);
               this.cleanupTimers.delete(code);
+              this.broadcastRoomList();
             }, 10 * 60 * 1000);
             this.cleanupTimers.set(code, cleanup);
           }
         }
       }
       this.socketToRoom.delete(socketId);
+      this.broadcastRoomList();
     }
   }
 
@@ -155,6 +206,7 @@ export class RoomManager {
         }
       }
       this.socketToRoom.delete(socketId);
+      this.broadcastRoomList();
     }
   }
 }

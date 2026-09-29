@@ -280,8 +280,8 @@ body {
 .lobby-card {
   position: relative;
   z-index: 10;
-  width: 480px;
-  max-width: 90vw;
+  width: 580px;
+  max-width: 95vw;
   padding: 2.25rem;
   display: flex;
   flex-direction: column;
@@ -322,6 +322,7 @@ body {
   border-radius: 8px;
   padding: 4px;
   border: 1px solid var(--border-subtle);
+  gap: 4px;
 }
 
 .tab-btn {
@@ -329,12 +330,13 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 8px 12px;
+  padding: 8px 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: var(--trans-smooth);
+  white-space: nowrap;
 }
 
 .tab-btn.active {
@@ -347,11 +349,305 @@ body {
 .tab-panel {
   display: none;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
 }
 
 .tab-panel.active {
   display: flex;
+}
+
+/* Room Browser Styles */
+.browser-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.browser-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.browser-title-wrap h3 {
+  font-size: 1.05rem;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.room-count-badge {
+  background: rgba(0, 210, 255, 0.15);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  color: #00d2ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.browser-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(5, 12, 22, 0.6);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.browser-player-bar label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.browser-player-bar input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.room-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(10, 22, 38, 0.75);
+  border: 1px solid rgba(0, 210, 255, 0.22);
+  transition: all 0.2s ease;
+}
+
+.room-card:hover {
+  border-color: rgba(0, 210, 255, 0.55);
+  box-shadow: 0 4px 18px rgba(0, 210, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.room-card.card-locked {
+  opacity: 0.75;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.room-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.room-code-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.code-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 1px;
+}
+
+.code-val {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: #00d2ff;
+  font-weight: 800;
+  background: rgba(0, 210, 255, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  letter-spacing: 1px;
+}
+
+.room-header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.room-status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.badge-lobby {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.4);
+}
+
+.badge-sailing {
+  background: rgba(0, 210, 255, 0.15);
+  color: #00d2ff;
+  border: 1px solid rgba(0, 210, 255, 0.4);
+}
+
+.badge-closed {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.room-tag-open {
+  background: rgba(56, 189, 248, 0.1);
+  color: #7dd3fc;
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.room-tag-closed {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.room-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.room-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.info-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.info-val {
+  color: #e2e8f0;
+}
+
+.info-separator {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.room-fleets-wrap {
+  margin-top: 2px;
+}
+
+.fleets-count-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.room-fleet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fleet-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  color: #e2e8f0;
+}
+
+.room-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.room-footer-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.empty-room-state {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  background: rgba(5, 12, 22, 0.5);
+  border-radius: 8px;
+  border: 1px dashed rgba(0, 210, 255, 0.25);
+}
+
+.empty-anchor-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.empty-room-state h4 {
+  font-size: 1.05rem;
+  color: #e2e8f0;
+  margin: 0.2rem 0;
+}
+
+.empty-room-state p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Checkbox Toggle Styling */
+.checkbox-group {
+  margin-top: 0.25rem;
+}
+
+.toggle-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #00d2ff;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-text strong {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.toggle-text small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .form-group {

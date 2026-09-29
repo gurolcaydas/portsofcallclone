@@ -4,7 +4,7 @@ import { WorldMap } from './ui/WorldMap.js';
 import { HarborDocking3D } from './minigames/HarborDocking3D.js';
 import { HazardNav3D } from './minigames/HazardNav3D.js';
 import { sounds } from './sound/SoundManager.js';
-import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState } from '@portofcall/shared';
+import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo } from '@portofcall/shared';
 
 class App {
   private network: NetworkClient;
@@ -14,6 +14,7 @@ class App {
   private hazardGame: HazardNav3D | null = null;
   private activeMinigameShipId: string | null = null;
   private currentState: GameState | null = null;
+  private cachedRooms: PublicRoomInfo[] = [];
 
   constructor() {
     this.network = new NetworkClient();
@@ -26,6 +27,131 @@ class App {
     this.setupLobbyEvents();
     this.setupNetworkEvents();
     this.checkExistingSession();
+    this.refreshRoomBrowser();
+  }
+
+  private async refreshRoomBrowser() {
+    const badge = document.getElementById('browser-room-count');
+    if (badge) badge.textContent = 'Searching...';
+    const rooms = await this.network.getRoomList();
+    this.renderRoomList(rooms);
+  }
+
+  private renderRoomList(rooms: PublicRoomInfo[]) {
+    this.cachedRooms = rooms || [];
+    const container = document.getElementById('browser-room-list');
+    const badge = document.getElementById('browser-room-count');
+    if (!container) return;
+
+    if (badge) {
+      badge.textContent = `${this.cachedRooms.length} active`;
+    }
+
+    if (this.cachedRooms.length === 0) {
+      container.innerHTML = `
+        <div class="empty-room-state">
+          <div class="empty-anchor-icon">⚓</div>
+          <h4>No Active Fleets Found</h4>
+          <p>Be the first captain to establish a shipping line and set sail on the world trade lanes!</p>
+          <button id="btn-empty-found" class="btn btn-primary btn-glow" style="margin-top: 0.8rem;">Found New Company</button>
+        </div>
+      `;
+
+      document.getElementById('btn-empty-found')?.addEventListener('click', () => {
+        document.getElementById('tab-host')?.click();
+      });
+      return;
+    }
+
+    container.innerHTML = this.cachedRooms.map((room) => {
+      const isLobby = room.status === 'lobby';
+      const isPlaying = room.status === 'playing';
+      const statusBadge = isLobby
+        ? `<span class="room-status-badge badge-lobby">● IN PORT (LOBBY)</span>`
+        : room.isOpen
+        ? `<span class="room-status-badge badge-sailing">🚢 AT SEA (DAY ${room.currentDay})</span>`
+        : `<span class="room-status-badge badge-closed">🔒 CLOSED (IN VOYAGE)</span>`;
+
+      const lateJoinTag = room.allowLateJoin
+        ? `<span class="room-tag-open">Open to New Captains</span>`
+        : `<span class="room-tag-closed">Private Voyage</span>`;
+
+      const minutesAgo = Math.max(1, Math.round((Date.now() - room.createdAt) / 60000));
+      const timeText = minutesAgo === 1 ? 'Just started' : `${minutesAgo}m ago`;
+
+      const actionButton = room.isOpen
+        ? `<button class="btn btn-primary btn-sm btn-join-card" data-code="${room.roomCode}">
+             ${isPlaying ? '🚢 Join Active Voyage' : '⚓ Join Fleet'}
+           </button>`
+        : `<button class="btn btn-secondary btn-sm" disabled style="opacity: 0.5; cursor: not-allowed;">
+             🔒 Locked
+           </button>`;
+
+      return `
+        <div class="room-card glass-panel ${room.isOpen ? 'card-open' : 'card-locked'}">
+          <div class="room-card-header">
+            <div class="room-code-tag">
+              <span class="code-label">ROOM</span>
+              <strong class="code-val">${room.roomCode}</strong>
+            </div>
+            <div class="room-header-status">
+              ${statusBadge}
+              ${lateJoinTag}
+            </div>
+          </div>
+
+          <div class="room-card-body">
+            <div class="room-info-row">
+              <span class="info-label">Founder:</span>
+              <strong class="info-val">${room.hostName}</strong>
+              <span class="info-separator">•</span>
+              <span class="info-label">Created:</span>
+              <span class="info-val text-muted">${timeText}</span>
+            </div>
+
+            <div class="room-fleets-wrap">
+              <div class="fleets-count-header">
+                <span>REGISTERED FLEETS (${room.playerCount}/${room.maxPlayers}):</span>
+              </div>
+              <div class="room-fleet-chips">
+                ${room.playerNames.map((name) => `<span class="fleet-chip">🚢 ${name}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="room-card-footer">
+            <span class="room-footer-hint">${room.isOpen ? 'Ready for immediate dispatch' : 'Voyage restricted to departed fleets'}</span>
+            ${actionButton}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach join click listeners on dynamically generated room cards
+    container.querySelectorAll('.btn-join-card').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const code = target.getAttribute('data-code');
+        if (!code) return;
+
+        const nameInput = document.getElementById('input-browser-company') as HTMLInputElement;
+        const companyName = nameInput?.value.trim() || 'Oceanic Trader';
+        const color = '#00d2ff';
+
+        const res = await this.network.joinRoom(code, companyName, color);
+        if (res.success && res.sessionToken) {
+          localStorage.setItem(
+            'poc_session',
+            JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color })
+          );
+          this.showWaitingLobby(code, false);
+          sounds.playFoghorn();
+          this.ui.showToast(`Joined Shipping Syndicate ${code}!`, 'success');
+        } else {
+          this.ui.showToast(res.error || 'Failed to join room', 'error');
+        }
+      });
+    });
   }
 
   private async checkExistingSession() {
@@ -50,24 +176,39 @@ class App {
   }
 
   private setupLobbyEvents() {
-    // Tabs between Host & Join
+    // 3 Tabs: Browser, Host & Join
+    const tabBrowse = document.getElementById('tab-browse');
     const tabHost = document.getElementById('tab-host');
     const tabJoin = document.getElementById('tab-join');
+    const panelBrowse = document.getElementById('panel-browse');
     const panelHost = document.getElementById('panel-host');
     const panelJoin = document.getElementById('panel-join');
 
+    const switchLobbyTab = (activeTab: HTMLElement | null, activePanel: HTMLElement | null) => {
+      [tabBrowse, tabHost, tabJoin].forEach((t) => t?.classList.remove('active'));
+      [panelBrowse, panelHost, panelJoin].forEach((p) => p?.classList.remove('active'));
+      activeTab?.classList.add('active');
+      activePanel?.classList.add('active');
+    };
+
+    tabBrowse?.addEventListener('click', () => {
+      switchLobbyTab(tabBrowse, panelBrowse);
+      this.refreshRoomBrowser();
+    });
+
     tabHost?.addEventListener('click', () => {
-      tabHost.classList.add('active');
-      tabJoin?.classList.remove('active');
-      panelHost?.classList.add('active');
-      panelJoin?.classList.remove('active');
+      switchLobbyTab(tabHost, panelHost);
     });
 
     tabJoin?.addEventListener('click', () => {
-      tabJoin.classList.add('active');
-      tabHost?.classList.remove('active');
-      panelJoin?.classList.add('active');
-      panelHost?.classList.remove('active');
+      switchLobbyTab(tabJoin, panelJoin);
+    });
+
+    // Refresh Rooms Button
+    const refreshBtn = document.getElementById('btn-refresh-rooms');
+    refreshBtn?.addEventListener('click', () => {
+      this.refreshRoomBrowser();
+      sounds.playBell();
     });
 
     // Color Pickers
@@ -80,8 +221,9 @@ class App {
       const nameInput = document.getElementById('input-host-company') as HTMLInputElement;
       const color = this.getSelectedColor('host-color-picker');
       const companyName = nameInput?.value.trim() || 'Transatlantic Star';
+      const allowLateJoin = (document.getElementById('check-allow-late-join') as HTMLInputElement)?.checked ?? true;
 
-      const res = await this.network.createRoom(companyName, color);
+      const res = await this.network.createRoom(companyName, color, allowLateJoin);
       if (res.success && res.roomCode && res.sessionToken) {
         localStorage.setItem(
           'poc_session',
@@ -163,6 +305,7 @@ class App {
   }
 
   private showWaitingLobby(code: string, isHost: boolean) {
+    document.getElementById('panel-browse')?.classList.remove('active');
     document.getElementById('panel-host')?.classList.remove('active');
     document.getElementById('panel-join')?.classList.remove('active');
     document.querySelector('.lobby-tabs')?.classList.add('hidden');
@@ -180,6 +323,10 @@ class App {
   }
 
   private setupNetworkEvents() {
+    this.network.onRoomListUpdate = (rooms: PublicRoomInfo[]) => {
+      this.renderRoomList(rooms);
+    };
+
     this.network.onStateUpdate = (state: GameState) => {
       this.currentState = state;
       this.worldMap.updateState(state);

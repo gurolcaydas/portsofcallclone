@@ -3,7 +3,8 @@ import {
   GameState,
   GlobalNewsItem,
   ClientToServerEvents,
-  ServerToClientEvents
+  ServerToClientEvents,
+  PublicRoomInfo
 } from '@portofcall/shared';
 
 export class NetworkClient {
@@ -17,6 +18,7 @@ export class NetworkClient {
   public onNews: ((news: GlobalNewsItem) => void) | null = null;
   public onActionResult: ((res: { success: boolean; message: string; action: string }) => void) | null = null;
   public onMinigameStart: ((data: { shipId: string; type: 'docking' | 'hazard'; portId?: string; hazardType?: string }) => void) | null = null;
+  public onRoomListUpdate: ((rooms: PublicRoomInfo[]) => void) | null = null;
   public onError: ((msg: string) => void) | null = null;
 
   constructor() {
@@ -38,6 +40,10 @@ export class NetworkClient {
       if (this.onStateUpdate) this.onStateUpdate(state);
     });
 
+    this.socket.on('room:list_update', (rooms: PublicRoomInfo[]) => {
+      if (this.onRoomListUpdate) this.onRoomListUpdate(rooms);
+    });
+
     this.socket.on('game:news', (news: GlobalNewsItem) => {
       if (this.onNews) this.onNews(news);
     });
@@ -55,9 +61,17 @@ export class NetworkClient {
     });
   }
 
-  public createRoom(companyName: string, color: string): Promise<{ success: boolean; roomCode?: string; sessionToken?: string; error?: string }> {
+  public getRoomList(): Promise<PublicRoomInfo[]> {
     return new Promise((resolve) => {
-      this.socket.emit('room:create', { companyName, color }, (res) => {
+      this.socket.emit('room:list', (rooms) => {
+        resolve(rooms || []);
+      });
+    });
+  }
+
+  public createRoom(companyName: string, color: string, allowLateJoin: boolean = true): Promise<{ success: boolean; roomCode?: string; sessionToken?: string; error?: string }> {
+    return new Promise((resolve) => {
+      this.socket.emit('room:create', { companyName, color, allowLateJoin }, (res) => {
         if (res.success && res.roomCode && res.playerId) {
           this.roomCode = res.roomCode;
           this.playerId = res.playerId;

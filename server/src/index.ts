@@ -123,17 +123,28 @@ app.get('/api/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
+  // Send initial room list on connection
+  socket.emit('room:list_update', roomManager.getPublicRoomList());
+
+  // Room list query
+  socket.on('room:list', (callback) => {
+    if (typeof callback === 'function') {
+      callback(roomManager.getPublicRoomList());
+    }
+  });
+
   // Create room
   socket.on('room:create', (data, callback) => {
     try {
       const { roomCode, player, room, sessionToken } = roomManager.createRoom(
         socket,
         data.companyName || 'Maritime Star Inc',
-        data.color || '#00d2ff'
+        data.color || '#00d2ff',
+        data.allowLateJoin !== false
       );
       callback({ success: true, roomCode, playerId: socket.id, sessionToken });
       room.broadcastState();
-      console.log(`[Room Created] ${roomCode} by ${data.companyName}`);
+      console.log(`[Room Created] ${roomCode} by ${data.companyName} (LateJoin: ${data.allowLateJoin !== false})`);
     } catch (err: any) {
       callback({ success: false, error: err.message });
     }
@@ -189,6 +200,8 @@ io.on('connection', (socket) => {
     const started = room.startGame();
     if (!started) {
       socket.emit('error', 'Game is already running');
+    } else {
+      roomManager.broadcastRoomList();
     }
   });
 

@@ -99,6 +99,20 @@ export interface GlobalNewsItem {
   type: 'info' | 'warning' | 'alert' | 'market';
 }
 
+export interface PublicRoomInfo {
+  roomCode: string;
+  hostName: string;
+  status: 'lobby' | 'playing' | 'gameover';
+  playerCount: number;
+  maxPlayers: number;
+  playerNames: string[];
+  currentDay: number;
+  createdAt: number;
+  startedAt?: number;
+  allowLateJoin: boolean;
+  isOpen: boolean;
+}
+
 export interface GameState {
   roomCode: string;
   hostId: string;
@@ -110,6 +124,9 @@ export interface GameState {
   bunkerPrices: Record<string, number>; // portId -> current price/ton
   newsFeed: GlobalNewsItem[];
   winnerId?: string;
+  allowLateJoin: boolean;
+  createdAt: number;
+  startedAt?: number;
 }
 
 // Socket communication protocol
@@ -119,15 +136,17 @@ export interface ServerToClientEvents {
   'game:news': (news: GlobalNewsItem) => void;
   'player:action_result': (result: { success: boolean; message: string; action: string }) => void;
   'minigame:start': (data: { shipId: string; type: 'docking' | 'hazard'; portId?: string; hazardType?: string }) => void;
+  'room:list_update': (rooms: PublicRoomInfo[]) => void;
   'error': (message: string) => void;
 }
 
 export interface ClientToServerEvents {
-  'room:create': (data: { companyName: string; color: string }, callback: (res: { success: boolean; roomCode?: string; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
+  'room:create': (data: { companyName: string; color: string; allowLateJoin?: boolean }, callback: (res: { success: boolean; roomCode?: string; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
   'room:join': (data: { roomCode: string; companyName: string; color: string }, callback: (res: { success: boolean; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
   'room:reconnect': (data: { roomCode: string; sessionToken: string }, callback: (res: { success: boolean; playerId?: string; error?: string }) => void) => void;
   'room:leave': () => void;
   'room:start_game': () => void;
+  'room:list': (callback: (rooms: PublicRoomInfo[]) => void) => void;
   'action:accept_charter': (data: { shipId: string; contractId: string }) => void;
   'action:bunker_fuel': (data: { shipId: string; tons: number }) => void;
   'action:buy_ship': (data: { blueprintId: string; shipName: string }) => void;
