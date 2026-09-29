@@ -401,21 +401,19 @@ export class WorldMap {
 
     // High-fidelity geographic vector continents and major islands (Calibrated for 1000 x 550 canvas)
     const landmasses: Array<Array<[number, number]>> = [
-      // 1. North America (Detailed coastlines: Alaska, Canada, Hudson Bay, Nova Scotia, US East Coast, Florida, Gulf, Yucatan, Central America, Baja, California, Pacific NW)
+      // 1. North America (Detailed coastlines: Alaska, Canada, Hudson Bay, Nova Scotia, US East Coast, Florida, Gulf of Mexico, Yucatan, Central America, Baja, California, Pacific NW)
       [
-        [65, 120], [90, 110], [130, 112], [150, 95], [185, 82], [225, 78], [250, 92],
-        [248, 115], [265, 122], [285, 118], [285, 98], [315, 105], [330, 125],
-        [348, 150], [335, 172], [320, 168], [308, 190], [288, 208], [282, 222], // New York / NJ
-        [278, 238], [274, 255], // Savannah / Carolinas
-        [272, 270], [277, 287], [268, 289], [264, 274], // Florida / Miami
-        [248, 276], [236, 268], [225, 262], [220, 280], // Gulf of Mexico / Houston / New Orleans
-        [228, 292], [245, 296], [240, 308], // Yucatan
-        [248, 325], [256, 340], // Central America & Panama isthmus
-        [248, 342], [232, 322], [216, 306], // Pacific Central America
-        [205, 276], [198, 305], [192, 300], [198, 268], // Baja California
-        [186, 256], [179, 248], [172, 230], [168, 210], // Long Beach, LA, California coast
-        [168, 204], [174, 194], [162, 175], [145, 150], // Seattle, Vancouver, Alaska panhandle
-        [115, 140], [78, 145] // Alaska south coast
+        [65, 120], [82, 108], [115, 105], [142, 94], [175, 82], [225, 76], [245, 88],
+        [242, 114], [258, 122], [275, 118], [274, 98], [295, 100], [315, 108], [330, 125],
+        [348, 148], [338, 160], [328, 160], [338, 168], [320, 168],
+        [308, 190], [298, 206], [292, 216], [284, 230], [278, 245], [274, 258], // New York, NJ, Chesapeake, Carolinas
+        [272, 270], [276, 287], [268, 290], [264, 274], // Florida Peninsula & Miami
+        [254, 274], [244, 268], [236, 266], [226, 268], [220, 280], // Gulf of Mexico / New Orleans / Houston
+        [228, 292], [245, 296], [240, 308], // Yucatan Peninsula
+        [248, 325], [256, 340], [250, 342], [232, 322], [216, 306], [205, 276], // Central America & Panama isthmus
+        [198, 264], [206, 298], [198, 304], [192, 270], // Baja California Peninsula
+        [184, 254], [178, 246], [172, 230], [168, 210], [168, 196], [162, 175], [145, 150], // California (LA, SF) & Pacific NW
+        [115, 140], [78, 145] // Alaska south coast & Aleutians
       ],
 
       // 2. Greenland
@@ -425,8 +423,8 @@ export class WorldMap {
 
       // 3. South America (Caribbean, Amazon delta, Brazil bulge, Santos/Rio, River Plate/Buenos Aires, Patagonia, Cape Horn, Chile, Peru)
       [
-        [258, 340], [275, 335], [300, 330], [335, 340], [360, 355], // Colombia, Venezuela, Guianas
-        [380, 365], [405, 385], [398, 415], // Amazon mouth, Recife / Brazil bulge
+        [258, 340], [275, 335], [300, 330], [335, 340], [360, 355],
+        [380, 362], [405, 385], [398, 415], // Amazon mouth, Recife / Brazil bulge
         [380, 432], [368, 444], [355, 460], // Rio, Santos
         [342, 475], [332, 482], [335, 495], // Rio de la Plata, Buenos Aires
         [325, 515], [318, 538], [308, 534], // Patagonia, Cape Horn tip
@@ -434,36 +432,77 @@ export class WorldMap {
         [282, 395], [272, 360], [265, 345]  // Peru, Ecuador back to Colombia
       ],
 
-      // 4. Great Britain
+      // 4. Falkland Islands
       [
-        [462, 160], [474, 165], [480, 178], [468, 185], [458, 190], [455, 175], [458, 162]
+        [345, 528], [352, 527], [348, 532]
       ],
 
-      // 5. Ireland
+      // 5. Great Britain
       [
-        [444, 170], [452, 172], [450, 185], [442, 182]
+        [462, 156], [474, 162], [480, 174], [476, 185], [468, 186], [458, 190], [455, 175], [458, 160]
       ],
 
-      // 6. Scandinavia & Finland
+      // 6. Ireland
       [
-        [488, 105], [515, 112], [530, 130], [518, 155], [502, 164], [486, 145], [482, 122]
+        [444, 168], [452, 172], [450, 185], [442, 182]
       ],
 
-      // 7. Mainland Europe (Low Countries, Germany, Baltic, Black Sea, Balkans, Greece, Italy boot, France, Iberian Peninsula)
+      // 7. Scandinavia & Jutland (Denmark)
       [
-        [482, 188], [486, 176], [498, 169], [504, 166], [525, 165], // Antwerp, Rotterdam, Bremerhaven, Hamburg, Baltic
-        [548, 162], [562, 182], [556, 206], // Poland, Ukraine, Black Sea north
-        [550, 222], [538, 236], [530, 230], [518, 215], // Istanbul west, Piraeus / Greece, Adriatic
-        [514, 218], [520, 235], [512, 240], [502, 228], [496, 212], // Italy (Venice, Puglia, toe, Rome, Genoa)
-        [486, 214], [482, 195], // Marseille, French Atlantic
-        [476, 218], [482, 222], [473, 229], [465, 236], [456, 237], // Barcelona, Valencia, Algeciras / Gibraltar
-        [448, 232], [446, 216], [465, 214] // Portugal / Lisbon, Galicia, Bay of Biscay
+        [506, 100], [520, 96], [534, 98], [546, 106], [542, 118], [528, 122], [522, 134],
+        [522, 146], [532, 150], [540, 152], [532, 158], [522, 160], [516, 154], [514, 140],
+        [506, 130], [498, 152], [490, 146], [486, 136], [490, 122], [496, 112]
+      ],
+      [
+        [498, 152], [502, 146], [506, 150], [502, 156] // Jutland
       ],
 
-      // 8. Africa (Gibraltar/Tangier, Maghreb, Egypt/Suez, Red Sea, Horn of Africa, Mozambique, Durban, Cape Town, West Africa)
+      // 8. Eurasia Mainland (Europe, Russia, Siberia, Kamchatka, China, Korea, Indochina, India, Iran, Mesopotamia, Levant, Anatolia, Greece, Italy, France, Spain)
       [
-        [454, 239], [480, 242], [510, 246], [535, 252], [548, 250], [559, 253], // Tangier, Algiers, Tunis, Tripoli, Alexandria, Port Said
-        [562, 262], [574, 282], [590, 312], [605, 335], // Red Sea west coast, Bab-el-Mandeb
+        // Western Europe & Baltic Coast
+        [482, 188], [486, 176], [498, 169], [504, 166], [520, 164], [536, 162], [552, 158],
+        // Northern Russia & Siberian Arctic Coast
+        [575, 140], [605, 125], [640, 105], [680, 88], [725, 78], [780, 72], [840, 75], [890, 82], [930, 92], [942, 105],
+        // Bering Strait, Kamchatka & Sea of Okhotsk
+        [935, 140], [915, 160], [890, 180], [875, 195], [855, 210],
+        // Korean Peninsula
+        [842, 222], [846, 240], [838, 242], [832, 226],
+        // China Coast, Bohai, Yangtze, Pearl River Delta
+        [824, 220], [808, 228], [816, 238], [824, 254], [822, 264], [806, 280], [796, 292], [788, 284], [780, 290],
+        // Indochina & Malay Peninsula
+        [775, 290], [765, 320], [746, 325], [745, 338], [748, 358], [755, 368], [758, 350], [750, 332], [735, 320], [728, 295],
+        // Bay of Bengal, India, Cape Comorin, Mumbai & Arabian Sea
+        [718, 290], [703, 320], [700, 350], [688, 330], [676, 300], [670, 295], [655, 285], [638, 270],
+        // Iran, Persian Gulf North, Mesopotamia & Levant
+        [625, 268], [608, 262], [594, 255], [568, 254], [562, 245],
+        // Southern Anatolia, Aegean & Dardanelles to Istanbul Bosphorus
+        [560, 238], [554, 236], [546, 234], [542, 228], [546, 224], [552, 222],
+        // Greece, Peloponnese & Adriatic Coast
+        [548, 224], [542, 230], [538, 236], [532, 238], [528, 232], [524, 222], [518, 215],
+        // Italy Peninsula (Venice, Puglia, toe, Rome, Genoa)
+        [514, 218], [520, 235], [512, 240], [502, 228], [496, 212],
+        // French Riviera & Iberian Peninsula (Marseille, Barcelona, Valencia, Algeciras, Lisbon, Biscay)
+        [490, 214], [486, 214], [482, 218], [476, 218], [480, 222], [473, 229], [465, 236], [456, 237], [448, 232], [445, 225], [446, 216], [465, 214], [482, 195]
+      ],
+
+      // 9. Mediterranean Islands (Sicily, Sardinia/Corsica, Crete, Cyprus)
+      [
+        [506, 236], [514, 235], [512, 242], [505, 241] // Sicily
+      ],
+      [
+        [495, 218], [498, 218], [497, 232], [493, 232] // Sardinia & Corsica
+      ],
+      [
+        [534, 244], [546, 244], [544, 247], [533, 247] // Crete
+      ],
+      [
+        [554, 242], [561, 240], [559, 244], [553, 244] // Cyprus
+      ],
+
+      // 10. Africa (Tangier, Maghreb, Egypt/Suez, Red Sea, Horn of Africa, Mozambique, Durban, Cape Town, West Africa)
+      [
+        [454, 239], [476, 242], [505, 245], [535, 252], [548, 250], [558, 253], // Tangier, Algiers, Tunis, Tripoli, Alexandria, Port Said
+        [562, 264], [574, 282], [590, 312], [605, 335], // Red Sea west coast, Bab-el-Mandeb
         [622, 338], [615, 365], [595, 395], [580, 425], // Horn of Africa (Somalia), Kenya, Mozambique
         [568, 450], [557, 464], [540, 475], [523, 476], // Durban, Port Elizabeth, Cape Town
         [515, 470], [498, 440], [490, 400], [488, 360], // Namibia, Angola, Congo
@@ -471,49 +510,38 @@ export class WorldMap {
         [432, 265], [445, 248] // Western Sahara, Morocco
       ],
 
-      // 9. Madagascar
+      // 11. Madagascar
       [
         [598, 425], [610, 440], [606, 472], [594, 465], [592, 435]
       ],
 
-      // 10. Arabian Peninsula (Sinai, Jeddah, Yemen, Oman, Dubai / Strait of Hormuz, Persian Gulf)
+      // 12. Arabian Peninsula (Sinai, Jeddah, Yemen, Oman, Dubai / Strait of Hormuz, Persian Gulf)
       [
-        [562, 255], [575, 275], [582, 288], [595, 320], [625, 322], // Sinai, Jeddah, Yemen
-        [645, 300], [638, 273], [615, 270], [595, 255] // Oman, Dubai / Hormuz, Persian Gulf
+        [560, 254], [563, 262], [568, 272], [576, 282], [582, 290], [594, 315], [604, 326], // Sinai, Jeddah, Bab-el-Mandeb
+        [620, 322], [636, 310], [644, 296], // Yemen, Oman, Ras al Hadd
+        [640, 274], [636, 272], [626, 270], [623, 264], [618, 266], // Strait of Hormuz, Dubai, Qatar Peninsula
+        [606, 260], [594, 256], [574, 254] // Kuwait, Northern Arabia
       ],
 
-      // 11. Asia Mainland (Iran, Pakistan, India, Bay of Bengal, Thailand, Indochina, Malay Peninsula, China East Coast, Korea, Siberia, Kamchatka)
+      // 13. Japan (Honshu, Kyushu/Shikoku, Hokkaido)
       [
-        [638, 270], [655, 285], [670, 295], // Iran & Pakistan / Karachi
-        [676, 300], [688, 330], [700, 350], [703, 320], [718, 290], // Mumbai, Goa, Cape Comorin, Chennai, Bengal
-        [728, 295], [735, 320], [746, 325], [765, 320], [775, 290], // Myanmar, Thailand / Bangkok, Vietnam
-        [745, 335], [747, 356], [754, 368], [758, 350], [750, 332], // Malay Peninsula (Port Klang, Singapore)
-        [780, 290], [788, 284], [792, 287], [796, 291], // Guangzhou, Shenzhen, Hong Kong
-        [806, 279], [822, 262], [822, 254], // Xiamen, Ningbo, Shanghai / Yangtze
-        [816, 237], [806, 227], [825, 220], // Qingdao, Tianjin / Bohai, Liaoning
-        [836, 225], [846, 243], [844, 230], // Korean Peninsula / Busan
-        [850, 215], [875, 195], [910, 160], [935, 140], [940, 90], [860, 80], [720, 75], [570, 85] // Siberia, Kamchatka, Bering
-      ],
-
-      // 12. Japan (Honshu & Hokkaido)
-      [
-        [852, 250], [862, 244], [867, 239], [878, 225], [874, 218], [858, 232] // Honshu (Tokyo / Yokohama)
+        [852, 250], [862, 244], [867, 239], [878, 225], [874, 218], [858, 232], [848, 248] // Honshu & Kyushu
       ],
       [
         [876, 212], [890, 208], [885, 220], [874, 216] // Hokkaido
       ],
 
-      // 13. Sri Lanka
+      // 14. Sri Lanka
       [
         [698, 344], [704, 345], [703, 355], [697, 352]
       ],
 
-      // 14. Taiwan
+      // 15. Taiwan
       [
         [809, 280], [816, 282], [813, 290], [808, 287]
       ],
 
-      // 15. Indonesian Archipelago & Philippines
+      // 16. Indonesian Archipelago & Philippines
       [
         [738, 350], [756, 365], [770, 385], [755, 390], [730, 360] // Sumatra
       ],
@@ -524,10 +552,13 @@ export class WorldMap {
         [772, 340], [792, 335], [802, 360], [780, 375], [768, 355] // Borneo
       ],
       [
+        [802, 362], [810, 360], [808, 380], [798, 375] // Sulawesi
+      ],
+      [
         [805, 312], [815, 320], [818, 345], [810, 340], [802, 325] // Philippines (Manila)
       ],
 
-      // 16. Australia & Tasmania
+      // 17. Australia & Tasmania
       [
         [825, 420], [845, 410], [860, 425], [880, 410], // Arnhem Land, Gulf of Carpentaria, Cape York
         [890, 435], [888, 470], [878, 480], // Brisbane, Sydney, Melbourne
@@ -538,7 +569,7 @@ export class WorldMap {
         [872, 502], [882, 502], [880, 514], [870, 512] // Tasmania
       ],
 
-      // 17. New Zealand
+      // 18. New Zealand
       [
         [940, 475], [955, 470], [950, 490], [938, 485] // North Island
       ],
@@ -546,9 +577,12 @@ export class WorldMap {
         [932, 492], [945, 490], [938, 515], [926, 512] // South Island
       ],
 
-      // 18. Cuba & Caribbean
+      // 19. Caribbean (Cuba, Hispaniola)
       [
-        [268, 296], [292, 298], [288, 305], [265, 302]
+        [268, 296], [292, 298], [288, 305], [265, 302] // Cuba
+      ],
+      [
+        [294, 302], [306, 301], [305, 307], [293, 306] // Hispaniola
       ]
     ];
 
@@ -584,6 +618,156 @@ export class WorldMap {
     }
 
     ctx.shadowBlur = 0;
+
+    // Draw Inland Seas & Major Water Bodies (Black Sea, Caspian Sea, Baltic, Great Lakes)
+    this.drawInlandSeas(scaleX, scaleY);
+  }
+
+  private drawInlandSeas(scaleX: number, scaleY: number) {
+    const ctx = this.ctx;
+    const h = this.canvas.height;
+
+    // Match deep ocean gradient backdrop
+    const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+    oceanGrad.addColorStop(0, '#040d1a');
+    oceanGrad.addColorStop(0.5, '#07162b');
+    oceanGrad.addColorStop(1, '#030a14');
+
+    // High-fidelity vector inland water bodies
+    const inlandSeas: Array<{ name: string; polygon: Array<[number, number]> }> = [
+      // 1. Black Sea (Calibrated: Bosphorus / Istanbul at [552, 222], Danube delta, Odessa, Crimea peninsula, Sea of Azov, Caucasus, Sinop cape, Turkish north coast)
+      {
+        name: 'Black Sea',
+        polygon: [
+          [552, 221], // Bosphorus entrance at Istanbul
+          [550, 214], // Bulgaria (Burgas, Varna)
+          [552, 205], // Romania (Constanta)
+          [555, 198], // Danube delta
+          [558, 193], // Odessa, Ukraine
+          [563, 194], // Dnieper mouth / Kherson
+          [565, 198], // Perekop isthmus (Crimea entrance)
+          [564, 203], // Sevastopol (SW Crimea)
+          [567, 205], // Yalta (South Crimea tip)
+          [571, 201], // Kerch Strait (West)
+          [573, 195], // Sea of Azov (South-East)
+          [576, 190], // Don river mouth / Rostov
+          [574, 186], // Sea of Azov (North)
+          [570, 188], // Mariupol
+          [568, 193], // Sea of Azov (West)
+          [571, 199], // Kerch Strait (East)
+          [574, 203], // Novorossiysk
+          [579, 207], // Sochi / Abkhazia
+          [584, 213], // Georgia coast / Poti
+          [587, 216], // Batumi
+          [582, 218], // Trabzon, Turkey
+          [575, 217], // Samsun
+          [568, 214], // Sinop Cape
+          [562, 217], // Inebolu
+          [556, 219], // Zonguldak
+          [552, 221]  // Return to Bosphorus
+        ]
+      },
+
+      // 2. Caspian Sea (Calibrated: Volga Delta/Astrakhan, Ural Delta, Mangyshlak, Kara-Bogaz-Gol, Turkmen coast, Northern Iran, Absheron/Baku Peninsula, Dagestan)
+      {
+        name: 'Caspian Sea',
+        polygon: [
+          [606, 188], // Volga Delta / Astrakhan
+          [612, 185], // Northern shallow Caspian basin
+          [618, 186], // Ural Delta / Atyrau
+          [624, 190], // Kazakhstan northeast coast
+          [622, 197], // Mangyshlak Peninsula
+          [626, 203], // Kazakh Caspian coast
+          [628, 212], // Kara-Bogaz-Gol inlet
+          [626, 220], // Turkmenbashi / Krasnovodsk
+          [628, 228], // Cheleken Peninsula
+          [625, 234], // Bandar Torkaman, Iran
+          [618, 235], // Mazandaran, Iran
+          [612, 234], // Bandar Anzali, Iran
+          [609, 228], // Astara (Azerbaijan border)
+          [611, 222], // Baku Bay
+          [616, 220], // Absheron Peninsula (Baku)
+          [612, 216], // Sumqayit
+          [609, 208], // Derbent, Dagestan
+          [606, 198], // Makhachkala
+          [606, 188]  // Return to Volga Delta
+        ]
+      },
+
+      // 3. Baltic Sea Cutout (Gulf of Bothnia & Gulf of Finland)
+      {
+        name: 'Baltic Sea',
+        polygon: [
+          [514, 138], [520, 130], [523, 142], [538, 151], [538, 155], [524, 154], [516, 150]
+        ]
+      },
+
+      // 4. North American Great Lakes
+      {
+        name: 'Lake Superior',
+        polygon: [
+          [252, 166], [266, 163], [271, 167], [258, 172]
+        ]
+      },
+      {
+        name: 'Lake Michigan & Huron',
+        polygon: [
+          [266, 172], [272, 170], [276, 183], [268, 183]
+        ]
+      },
+      {
+        name: 'Lake Erie & Ontario',
+        polygon: [
+          [276, 180], [285, 177], [287, 182], [277, 184]
+        ]
+      }
+    ];
+
+    // Pass 1: Bathymetry inner glow / shelf halo
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.08)';
+    ctx.lineWidth = 3.0;
+    for (const body of inlandSeas) {
+      ctx.beginPath();
+      ctx.moveTo(body.polygon[0][0] * scaleX, body.polygon[0][1] * scaleY);
+      for (let i = 1; i < body.polygon.length; i++) {
+        ctx.lineTo(body.polygon[i][0] * scaleX, body.polygon[i][1] * scaleY);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    // Pass 2: Ocean Fill and Crisp Coastline Stroke
+    ctx.fillStyle = oceanGrad;
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.38)';
+    ctx.lineWidth = 1.1;
+    ctx.shadowColor = 'rgba(0, 210, 255, 0.22)';
+    ctx.shadowBlur = 4;
+
+    for (const body of inlandSeas) {
+      ctx.beginPath();
+      ctx.moveTo(body.polygon[0][0] * scaleX, body.polygon[0][1] * scaleY);
+      for (let i = 1; i < body.polygon.length; i++) {
+        ctx.lineTo(body.polygon[i][0] * scaleX, body.polygon[i][1] * scaleY);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // Pass 3: Tactical Sea Designation Typography
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Black Sea Label
+    ctx.font = '600 6.5px "Chakra Petch", monospace';
+    ctx.fillStyle = 'rgba(0, 210, 255, 0.32)';
+    ctx.fillText('BLACK SEA', 568 * scaleX, 209 * scaleY);
+
+    // Caspian Sea Label (stacked vertically to fit the elongated basin)
+    ctx.font = '600 5.5px "Chakra Petch", monospace';
+    ctx.fillText('CASPIAN', 617 * scaleX, 208 * scaleY);
+    ctx.fillText('SEA', 617 * scaleX, 215 * scaleY);
   }
 
   private drawMajorShippingRoutes(scaleX: number, scaleY: number) {
