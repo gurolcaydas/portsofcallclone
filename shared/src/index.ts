@@ -90,6 +90,7 @@ export interface PlayerCompany {
   id: string;
   name: string;
   color: string;
+  homePortId?: string;
   cash: number;
   loanBalance: number;
   creditLimit: number;
@@ -151,8 +152,8 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  'room:create': (data: { companyName: string; color: string; allowLateJoin?: boolean }, callback: (res: { success: boolean; roomCode?: string; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
-  'room:join': (data: { roomCode: string; companyName: string; color: string }, callback: (res: { success: boolean; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
+  'room:create': (data: { companyName: string; color: string; allowLateJoin?: boolean; homePortId?: string }, callback: (res: { success: boolean; roomCode?: string; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
+  'room:join': (data: { roomCode: string; companyName: string; color: string; homePortId?: string }, callback: (res: { success: boolean; playerId?: string; sessionToken?: string; error?: string }) => void) => void;
   'room:reconnect': (data: { roomCode: string; sessionToken: string }, callback: (res: { success: boolean; playerId?: string; error?: string }) => void) => void;
   'room:leave': () => void;
   'room:start_game': () => void;
@@ -1525,5 +1526,39 @@ export function getRandomCompanyName(excludeNames: string[] = []): string {
   // 3. Numbered fallback
   const base = MARITIME_COMPANY_NAMES[Math.floor(Math.random() * MARITIME_COMPANY_NAMES.length)];
   return `${base} ${Math.floor(Math.random() * 900 + 100)}`;
+}
+
+/**
+ * Calculates the establishment and licensing cost to base a company's headquarters in a given port.
+ * Better ports (higher cargo tonnage, cruise passengers, drydocks, dual mixed infrastructure)
+ * command higher establishment fees, reflecting their premier commercial value and strategic reach.
+ */
+export function calculateHomePortCost(port: Port): number {
+  let cost = 20000; // Base maritime charter & registration fee
+
+  if (port.category === 'mixed') {
+    cost += 25000; // Premium dual terminal rights (cargo + passenger)
+  } else if (port.category === 'passenger') {
+    cost += 20000; // Premier cruise waterfront access
+  } else {
+    cost += 15000; // Heavy industrial berthing rights
+  }
+
+  const cargoM = port.annualCargoTonnageMillions || 15;
+  const paxK = port.annualPassengersThousands || 0;
+
+  // Scale by annual cargo & passenger volumes
+  cost += Math.min(35000, Math.round(cargoM * 40));
+  cost += Math.min(25000, Math.round((paxK / 1000) * 3500));
+
+  // Shipyard drydock facility on site
+  if (port.hasDrydock) {
+    cost += 15000;
+  }
+
+  // Base port tariff influence
+  cost += Math.round((port.portFeePerCall || 10000) * 0.8);
+
+  return Math.round(cost / 1000) * 1000;
 }
 

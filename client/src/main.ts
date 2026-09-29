@@ -4,7 +4,7 @@ import { WorldMap } from './ui/WorldMap.js';
 import { HarborDocking3D } from './minigames/HarborDocking3D.js';
 import { HazardNav3D } from './minigames/HazardNav3D.js';
 import { sounds } from './sound/SoundManager.js';
-import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, getRandomCompanyName } from '@portofcall/shared';
+import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, getRandomCompanyName, calculateHomePortCost } from '@portofcall/shared';
 
 class App {
   private network: NetworkClient;
@@ -146,14 +146,16 @@ class App {
         if (!code) return;
 
         const nameInput = document.getElementById('input-browser-company') as HTMLInputElement;
+        const homePortSelect = document.getElementById('select-browser-homeport') as HTMLSelectElement | null;
         const companyName = nameInput?.value.trim() || getRandomCompanyName();
+        const homePortId = homePortSelect?.value || 'rotterdam';
         const color = '#00d2ff';
 
-        const res = await this.network.joinRoom(code, companyName, color);
+        const res = await this.network.joinRoom(code, companyName, color, homePortId);
         if (res.success && res.sessionToken) {
           localStorage.setItem(
             'poc_session',
-            JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color })
+            JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color, homePortId })
           );
           this.showWaitingLobby(code, false);
           sounds.playFoghorn();
@@ -253,19 +255,24 @@ class App {
     this.setupColorPicker('host-color-picker');
     this.setupColorPicker('join-color-picker');
 
+    // Home Port Selectors & Preview
+    this.setupHomePortSelectors();
+
     // Create Room Button
     const createBtn = document.getElementById('btn-create-room');
     createBtn?.addEventListener('click', async () => {
       const nameInput = document.getElementById('input-host-company') as HTMLInputElement;
+      const homePortSelect = document.getElementById('select-host-homeport') as HTMLSelectElement | null;
       const color = this.getSelectedColor('host-color-picker');
       const companyName = nameInput?.value.trim() || getRandomCompanyName();
       const allowLateJoin = (document.getElementById('check-allow-late-join') as HTMLInputElement)?.checked ?? true;
+      const homePortId = homePortSelect?.value || 'rotterdam';
 
-      const res = await this.network.createRoom(companyName, color, allowLateJoin);
+      const res = await this.network.createRoom(companyName, color, allowLateJoin, homePortId);
       if (res.success && res.roomCode && res.sessionToken) {
         localStorage.setItem(
           'poc_session',
-          JSON.stringify({ roomCode: res.roomCode, sessionToken: res.sessionToken, companyName, color })
+          JSON.stringify({ roomCode: res.roomCode, sessionToken: res.sessionToken, companyName, color, homePortId })
         );
         this.showWaitingLobby(res.roomCode, true);
         sounds.playFoghorn();
@@ -279,20 +286,22 @@ class App {
     joinBtn?.addEventListener('click', async () => {
       const codeInput = document.getElementById('input-join-code') as HTMLInputElement;
       const nameInput = document.getElementById('input-join-company') as HTMLInputElement;
+      const homePortSelect = document.getElementById('select-join-homeport') as HTMLSelectElement | null;
       const color = this.getSelectedColor('join-color-picker');
       const code = codeInput?.value.trim().toUpperCase();
       const companyName = nameInput?.value.trim() || getRandomCompanyName();
+      const homePortId = homePortSelect?.value || 'rotterdam';
 
       if (!code || code.length < 4) {
         this.ui.showToast('Please enter a valid 4-character room code', 'warning');
         return;
       }
 
-      const res = await this.network.joinRoom(code, companyName, color);
+      const res = await this.network.joinRoom(code, companyName, color, homePortId);
       if (res.success && res.sessionToken) {
         localStorage.setItem(
           'poc_session',
-          JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color })
+          JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color, homePortId })
         );
         this.showWaitingLobby(code, false);
         sounds.playFoghorn();
@@ -340,6 +349,70 @@ class App {
   private getSelectedColor(containerId: string): string {
     const active = document.querySelector(`#${containerId} .color-dot.active`) as HTMLElement;
     return active?.getAttribute('data-color') || '#00d2ff';
+  }
+
+  private setupHomePortSelectors() {
+    const selectorConfigs = [
+      { selectId: 'select-host-homeport', infoId: 'host-homeport-info' },
+      { selectId: 'select-join-homeport', infoId: 'join-homeport-info' },
+      { selectId: 'select-browser-homeport', infoId: 'browser-homeport-info' }
+    ];
+
+    // Sort ports alphabetically by name
+    const sortedPorts = [...WORLD_PORTS].sort((a, b) => a.name.localeCompare(b.name));
+
+    selectorConfigs.forEach(({ selectId, infoId }) => {
+      const select = document.getElementById(selectId) as HTMLSelectElement | null;
+      const info = document.getElementById(infoId);
+      if (!select) return;
+
+      select.innerHTML = '';
+      sortedPorts.forEach((port) => {
+        const cost = calculateHomePortCost(port);
+        const opt = document.createElement('option');
+        opt.value = port.id;
+        const catBadge = port.category === 'mixed' ? '⚡ Dual Hub' : port.category === 'passenger' ? '🚢 Cruise Port' : '📦 Heavy Cargo';
+        opt.textContent = `${port.name} (${port.country}) — $${cost.toLocaleString()} [${catBadge}]`;
+        if (port.id === 'rotterdam') {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+
+      const updateInfo = () => {
+        if (!info) return;
+        const selectedId = select.value || 'rotterdam';
+        const port = WORLD_PORTS.find((p) => p.id === selectedId) || sortedPorts[0];
+        const cost = calculateHomePortCost(port);
+        const startingCash = 400000 - cost;
+
+        const terminalDesc = port.category === 'mixed'
+          ? 'Dual Cargo + Passenger Cruise Terminal'
+          : port.category === 'passenger'
+          ? 'Dedicated International Cruise Waterfront'
+          : 'Heavy Industrial Cargo Terminal';
+
+        info.innerHTML = `
+          <div class="cost-line">
+            <span>Establishment License Fee:</span>
+            <span class="cost-amount">$${cost.toLocaleString()}</span>
+          </div>
+          <div class="cost-line">
+            <span>Starting Treasury Capital:</span>
+            <span class="cash-left">$${startingCash.toLocaleString()}</span>
+          </div>
+          <div style="font-size: 0.73rem; color: #7f9bb6; margin-top: 2px;">
+            Facilities: <strong>${terminalDesc}</strong>${port.hasDrydock ? ' • ⚓ Shipyard Drydock' : ''}
+          </div>
+        `;
+      };
+
+      select.addEventListener('change', () => {
+        updateInfo();
+        sounds.playBell();
+      });
+      updateInfo();
+    });
   }
 
   private showWaitingLobby(code: string, isHost: boolean) {

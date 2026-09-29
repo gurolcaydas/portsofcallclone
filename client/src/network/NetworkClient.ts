@@ -69,9 +69,14 @@ export class NetworkClient {
     });
   }
 
-  public createRoom(companyName: string, color: string, allowLateJoin: boolean = true): Promise<{ success: boolean; roomCode?: string; sessionToken?: string; error?: string }> {
+  public createRoom(
+    companyName: string,
+    color: string,
+    allowLateJoin: boolean = true,
+    homePortId?: string
+  ): Promise<{ success: boolean; roomCode?: string; sessionToken?: string; error?: string }> {
     return new Promise((resolve) => {
-      this.socket.emit('room:create', { companyName, color, allowLateJoin }, (res) => {
+      this.socket.emit('room:create', { companyName, color, allowLateJoin, homePortId }, (res) => {
         if (res.success && res.roomCode && res.playerId) {
           this.roomCode = res.roomCode;
           this.playerId = res.playerId;
@@ -82,9 +87,14 @@ export class NetworkClient {
     });
   }
 
-  public joinRoom(roomCode: string, companyName: string, color: string): Promise<{ success: boolean; sessionToken?: string; error?: string }> {
+  public joinRoom(
+    roomCode: string,
+    companyName: string,
+    color: string,
+    homePortId?: string
+  ): Promise<{ success: boolean; sessionToken?: string; error?: string }> {
     return new Promise((resolve) => {
-      this.socket.emit('room:join', { roomCode, companyName, color }, (res) => {
+      this.socket.emit('room:join', { roomCode, companyName, color, homePortId }, (res) => {
         if (res.success && res.playerId) {
           this.roomCode = roomCode;
           this.playerId = res.playerId;

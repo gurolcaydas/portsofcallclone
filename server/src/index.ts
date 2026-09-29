@@ -141,11 +141,12 @@ io.on('connection', (socket) => {
         socket,
         data.companyName?.trim() || getRandomCompanyName(),
         data.color || '#00d2ff',
-        data.allowLateJoin !== false
+        data.allowLateJoin !== false,
+        data.homePortId
       );
       callback({ success: true, roomCode, playerId: socket.id, sessionToken });
       room.broadcastState();
-      console.log(`[Room Created] ${roomCode} by ${data.companyName} (LateJoin: ${data.allowLateJoin !== false})`);
+      console.log(`[Room Created] ${roomCode} by ${data.companyName} at ${player.homePortId} (LateJoin: ${data.allowLateJoin !== false})`);
     } catch (err: any) {
       callback({ success: false, error: err.message });
     }
@@ -158,7 +159,8 @@ io.on('connection', (socket) => {
         socket,
         data.roomCode,
         data.companyName?.trim() || getRandomCompanyName(),
-        data.color || '#f7b731'
+        data.color || '#f7b731',
+        data.homePortId
       );
       if (!result.success || !result.room) {
         return callback({ success: false, error: result.error });

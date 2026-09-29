@@ -9,7 +9,8 @@ import {
   calculatePortDistance,
   getRandomCompanyName,
   canShipAcceptContract,
-  getWorldShipStock
+  getWorldShipStock,
+  calculateHomePortCost
 } from '@portofcall/shared';
 import { MarketManager } from './MarketManager.js';
 import { Server } from 'socket.io';
@@ -48,7 +49,13 @@ export class GameRoom {
     };
   }
 
-  public addPlayer(id: string, name: string, color: string, sessionToken?: string): PlayerCompany {
+  public addPlayer(
+    id: string,
+    name: string,
+    color: string,
+    sessionToken?: string,
+    homePortId?: string
+  ): PlayerCompany {
     let companyName = name?.trim();
     const existingPlayerNames = Object.values(this.state.players).map((p) => p.name);
     if (!companyName) {
@@ -65,7 +72,12 @@ export class GameRoom {
       }
     }
 
-    // Starting vessel: Coastal Tramp Steamer docked at Rotterdam
+    // Determine chosen home port & licensing cost
+    const homePort = WORLD_PORTS.find((p) => p.id === homePortId) || WORLD_PORTS.find((p) => p.id === 'rotterdam') || WORLD_PORTS[0];
+    const licenseCost = calculateHomePortCost(homePort);
+    const startingCash = Math.max(50000, INITIAL_PLAYER_SETUP.cash - licenseCost);
+
+    // Starting vessel: Coastal Tramp Steamer docked at chosen home port
     const starterBlueprint = SHIP_BLUEPRINTS[0];
     const starterShip: PlayerShip = {
       id: `ship_${id}_1`,
@@ -74,7 +86,7 @@ export class GameRoom {
       hullCondition: 92,
       engineCondition: 90,
       fuelTons: starterBlueprint.fuelCapacityTons * 0.8, // 80% full tank
-      currentPortId: 'rotterdam',
+      currentPortId: homePort.id,
       status: 'docked',
       currentVoyage: null,
       cargo: null
@@ -84,7 +96,8 @@ export class GameRoom {
       id,
       name: companyName,
       color: color || INITIAL_PLAYER_SETUP.defaultColor,
-      cash: INITIAL_PLAYER_SETUP.cash,
+      homePortId: homePort.id,
+      cash: startingCash,
       loanBalance: INITIAL_PLAYER_SETUP.loanBalance,
       creditLimit: INITIAL_PLAYER_SETUP.creditLimit,
       reputation: INITIAL_PLAYER_SETUP.reputation,
@@ -97,6 +110,16 @@ export class GameRoom {
     };
 
     this.state.players[id] = company;
+
+    // Log headquarters establishment news bulletin
+    const news: GlobalNewsItem = {
+      id: `news_hq_${id}_${Date.now()}`,
+      day: this.state.currentDay,
+      headline: `Maritime Registry: ${companyName} established corporate headquarters in ${homePort.name} (${homePort.country}) with flagship ${starterShip.name} (License fee: $${licenseCost.toLocaleString()}).`,
+      type: 'info'
+    };
+    this.state.newsFeed.unshift(news);
+
     return company;
   }
 

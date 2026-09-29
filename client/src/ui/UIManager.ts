@@ -292,8 +292,15 @@ export class UIManager {
     const dateEl = document.getElementById('display-game-date');
     if (dateEl) dateEl.textContent = `DAY ${state.currentDay}`;
 
-    // 2. Player Financial Pills
     const myPlayer = myPlayerId ? state.players[myPlayerId] : null;
+    const homePortEl = document.getElementById('display-homeport-name');
+    if (homePortEl && myPlayer) {
+      const hqPort = WORLD_PORTS.find((p) => p.id === myPlayer.homePortId) || WORLD_PORTS.find((p) => p.id === 'rotterdam');
+      if (hqPort) {
+        homePortEl.textContent = `${hqPort.name}`;
+        homePortEl.title = `Headquarters: ${hqPort.name} (${hqPort.country})`;
+      }
+    }
     if (myPlayer) {
       const cashEl = document.getElementById('display-cash');
       if (cashEl) {
@@ -347,6 +354,12 @@ export class UIManager {
   private renderFleetView(player: PlayerCompany | null) {
     const container = document.getElementById('fleet-card-container');
     if (!container || !player) return;
+
+    const fleetHqEl = document.getElementById('fleet-hq-name');
+    if (fleetHqEl) {
+      const hqPort = WORLD_PORTS.find((p) => p.id === player.homePortId) || WORLD_PORTS.find((p) => p.id === 'rotterdam');
+      if (hqPort) fleetHqEl.textContent = `${hqPort.name}, ${hqPort.country}`;
+    }
 
     container.innerHTML = '';
 

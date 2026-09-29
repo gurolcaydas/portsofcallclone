@@ -123,7 +123,7 @@ body {
   animation: pulse-glow 2s infinite ease-in-out;
 }
 
-.room-info, .date-display {
+.room-info, .date-display, .homeport-header-pill {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   display: flex;
@@ -744,6 +744,62 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   letter-spacing: 8px;
   text-align: center;
   text-transform: uppercase;
+}
+
+.port-select {
+  width: 100%;
+  background: rgba(5, 11, 20, 0.85);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+  transition: var(--trans-smooth);
+}
+
+.port-select:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.3);
+}
+
+.port-select option {
+  background: #091a2e;
+  color: #fff;
+  padding: 6px;
+}
+
+.homeport-cost-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(8, 20, 36, 0.7);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #a0c0e0;
+}
+
+.homeport-cost-preview .cost-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.homeport-cost-preview .cost-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #ffa502;
+}
+
+.homeport-cost-preview .cash-left {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #2ed573;
 }
 
 .color-palette {

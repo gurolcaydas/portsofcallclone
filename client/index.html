@@ -28,6 +28,10 @@
           <span class="label">DATE:</span>
           <span id="display-game-date" class="highlight-val">DAY 1</span>
         </div>
+        <div class="homeport-header-pill" id="display-homeport-pill" title="Company Headquarters Port">
+          <span class="label">HQ:</span>
+          <span id="display-homeport-name" class="highlight-val">Rotterdam</span>
+        </div>
       </div>
 
       <div class="header-center" id="news-ticker-container">
@@ -85,12 +89,19 @@
               </button>
             </div>
 
-            <div class="browser-player-bar">
-              <label for="input-browser-company">Your Company Name:</label>
-              <div class="company-name-input-group">
-                <input type="text" id="input-browser-company" maxlength="28" placeholder="e.g. Blue Star Line">
-                <button type="button" class="btn-dice-reroll" data-target="input-browser-company" title="Generate another random maritime company name">🎲</button>
+            <div class="browser-player-bar" style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label for="input-browser-company" style="min-width: 140px;">Company Name:</label>
+                <div class="company-name-input-group" style="flex: 1;">
+                  <input type="text" id="input-browser-company" maxlength="28" placeholder="e.g. Blue Star Line">
+                  <button type="button" class="btn-dice-reroll" data-target="input-browser-company" title="Generate another random maritime company name">🎲</button>
+                </div>
               </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label for="select-browser-homeport" style="min-width: 140px;">Headquarters Port:</label>
+                <select id="select-browser-homeport" class="port-select" style="flex: 1;"></select>
+              </div>
+              <div id="browser-homeport-info" class="homeport-cost-preview"></div>
             </div>
 
             <div id="browser-room-list" class="room-list-container">
@@ -106,6 +117,11 @@
                 <input type="text" id="input-host-company" maxlength="28" placeholder="e.g. Blue Star Line">
                 <button type="button" class="btn-dice-reroll" data-target="input-host-company" title="Generate another random maritime company name">🎲</button>
               </div>
+            </div>
+            <div class="form-group">
+              <label for="select-host-homeport">Headquarters Home Port (Founding Berth)</label>
+              <select id="select-host-homeport" class="port-select"></select>
+              <div id="host-homeport-info" class="homeport-cost-preview"></div>
             </div>
             <div class="form-group">
               <label>House Colors (Hull & Flags)</label>
@@ -142,6 +158,11 @@
                 <input type="text" id="input-join-company" maxlength="28" placeholder="e.g. Blue Star Line">
                 <button type="button" class="btn-dice-reroll" data-target="input-join-company" title="Generate another random maritime company name">🎲</button>
               </div>
+            </div>
+            <div class="form-group">
+              <label for="select-join-homeport">Headquarters Home Port (Founding Berth)</label>
+              <select id="select-join-homeport" class="port-select"></select>
+              <div id="join-homeport-info" class="homeport-cost-preview"></div>
             </div>
             <div class="form-group">
               <label>House Colors</label>
@@ -234,9 +255,14 @@
 
           <!-- View B: Fleet Management -->
           <div id="tab-fleet" class="game-subview">
-            <div class="panel-header">
-              <h2>Company Fleet</h2>
-              <p class="subtitle">Monitor vessel condition, bunker levels, cargo holds, and dispatch voyages.</p>
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h2>Company Fleet</h2>
+                <p class="subtitle">Monitor vessel condition, bunker levels, cargo holds, and dispatch voyages.</p>
+              </div>
+              <div id="fleet-hq-badge" style="background: rgba(0, 210, 255, 0.12); border: 1px solid rgba(0, 210, 255, 0.4); padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; color: #00d2ff; font-weight: 600;">
+                ⚓ Headquarters: <span id="fleet-hq-name">Rotterdam</span>
+              </div>
             </div>
             <div id="fleet-card-container" class="fleet-grid">
               <!-- Dynamically populated with ship cards -->

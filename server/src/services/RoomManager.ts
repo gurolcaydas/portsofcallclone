@@ -69,11 +69,11 @@ export class RoomManager {
     this.io.emit('room:list_update', list);
   }
 
-  public createRoom(socket: Socket, companyName: string, color: string, allowLateJoin: boolean = true) {
+  public createRoom(socket: Socket, companyName: string, color: string, allowLateJoin: boolean = true, homePortId?: string) {
     const roomCode = this.generateCode();
     const sessionToken = this.generateSessionToken();
     const room = new GameRoom(roomCode, socket.id, this.io, allowLateJoin);
-    const player = room.addPlayer(socket.id, companyName, color, sessionToken);
+    const player = room.addPlayer(socket.id, companyName, color, sessionToken, homePortId);
 
     this.rooms.set(roomCode, room);
     this.socketToRoom.set(socket.id, roomCode);
@@ -84,7 +84,7 @@ export class RoomManager {
     return { roomCode, player, room, sessionToken };
   }
 
-  public joinRoom(socket: Socket, roomCode: string, companyName: string, color: string) {
+  public joinRoom(socket: Socket, roomCode: string, companyName: string, color: string, homePortId?: string) {
     const normalizedCode = roomCode.trim().toUpperCase();
     const room = this.rooms.get(normalizedCode);
     if (!room) {
@@ -111,7 +111,7 @@ export class RoomManager {
     }
 
     const sessionToken = this.generateSessionToken();
-    const player = room.addPlayer(socket.id, companyName, color, sessionToken);
+    const player = room.addPlayer(socket.id, companyName, color, sessionToken, homePortId);
     this.socketToRoom.set(socket.id, normalizedCode);
     this.sessionTokens.set(sessionToken, { roomCode: normalizedCode, playerId: socket.id });
     socket.join(normalizedCode);
