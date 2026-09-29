@@ -324,44 +324,253 @@ export class WorldMap {
 
     this.renderedShips = [];
 
-    // 1. Draw Stylized World Landmasses (Abstract vector continents)
+    // 1. Draw Deep Oceanic Backdrop & Tactical Navigational Grid
+    this.drawOceanAndGrid(w, h, scaleX, scaleY);
+
+    // 2. Draw High-Fidelity Geographical Continents & Islands
     this.drawContinents(scaleX, scaleY);
 
-    // 2. Draw Maritime Shipping Lanes (faint dotted lines)
+    // 3. Draw Maritime Shipping Lanes (faint dotted lines)
     this.drawMajorShippingRoutes(scaleX, scaleY);
 
-    // 3. Draw Active Voyages & Sailing Ships with direction and wakes
+    // 4. Draw Active Voyages & Sailing Ships with direction and wakes
     if (this.currentState) {
       this.drawActiveVoyages(scaleX, scaleY, time);
     }
 
-    // 4. Draw Port Beacons and Docked Vessel Badges
+    // 5. Draw Port Beacons and Docked Vessel Badges
     this.drawPorts(scaleX, scaleY, time);
 
     this.ctx.restore();
   }
 
-  private drawContinents(scaleX: number, scaleY: number) {
+  private drawOceanAndGrid(w: number, h: number, scaleX: number, scaleY: number) {
     const ctx = this.ctx;
-    ctx.fillStyle = 'rgba(18, 35, 62, 0.45)';
-    ctx.strokeStyle = 'rgba(0, 210, 255, 0.15)';
+
+    // Deep ocean gradient
+    const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+    oceanGrad.addColorStop(0, '#040d1a');
+    oceanGrad.addColorStop(0.5, '#07162b');
+    oceanGrad.addColorStop(1, '#030a14');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Tactical Coordinates Grid (Meridians & Parallels)
     ctx.lineWidth = 1;
 
-    // Procedural polygonal continents for a clean, sleek tactical map look
-    const landmasses = [
-      // North America
-      [[150, 100], [280, 80], [330, 160], [290, 240], [230, 290], [180, 240], [130, 150]],
-      // South America
-      [[280, 310], [370, 330], [380, 430], [330, 520], [290, 480], [260, 350]],
-      // Europe
-      [[440, 110], [530, 100], [560, 190], [470, 230], [420, 180]],
-      // Africa
-      [[450, 240], [570, 230], [590, 350], [540, 500], [480, 480], [430, 310]],
-      // Asia
-      [[570, 90], [860, 110], [880, 260], [790, 360], [670, 330], [580, 210]],
-      // Australia
-      [[820, 420], [920, 410], [930, 500], [830, 510]]
+    // Longitude Meridians every 30°
+    ctx.setLineDash([2, 6]);
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.04)';
+    for (let lng = -150; lng <= 180; lng += 30) {
+      const x = ((lng + 180) / 360) * this.REF_W * scaleX;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+
+    // Latitude Parallels
+    const parallels = [
+      { yNorm: 80, label: '66.5° N ARCTIC CIRCLE', major: false },
+      { yNorm: 190, label: '23.5° N TROPIC OF CANCER', major: false },
+      { yNorm: 290, label: '0° EQUATOR', major: true },
+      { yNorm: 390, label: '23.5° S TROPIC OF CAPRICORN', major: false },
+      { yNorm: 490, label: '66.5° S ANTARCTIC CIRCLE', major: false }
     ];
+
+    for (const p of parallels) {
+      const y = p.yNorm * scaleY;
+      ctx.setLineDash(p.major ? [4, 6] : [2, 8]);
+      ctx.strokeStyle = p.major ? 'rgba(0, 210, 255, 0.12)' : 'rgba(0, 210, 255, 0.04)';
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+
+      // Subtle high-tech latitude tag at right edge
+      ctx.fillStyle = p.major ? 'rgba(0, 210, 255, 0.22)' : 'rgba(0, 210, 255, 0.10)';
+      ctx.font = '600 7px Chakra Petch';
+      ctx.fillText(p.label, w - 120 * scaleX, y - 3);
+    }
+
+    ctx.setLineDash([]);
+  }
+
+  private drawContinents(scaleX: number, scaleY: number) {
+    const ctx = this.ctx;
+
+    // High-fidelity geographic vector continents and major islands (Calibrated for 1000 x 550 canvas)
+    const landmasses: Array<Array<[number, number]>> = [
+      // 1. North America (Detailed coastlines: Alaska, Canada, Hudson Bay, Nova Scotia, US East Coast, Florida, Gulf, Yucatan, Central America, Baja, California, Pacific NW)
+      [
+        [65, 120], [90, 110], [130, 112], [150, 95], [185, 82], [225, 78], [250, 92],
+        [248, 115], [265, 122], [285, 118], [285, 98], [315, 105], [330, 125],
+        [348, 150], [335, 172], [320, 168], [308, 190], [288, 208], [282, 222], // New York / NJ
+        [278, 238], [274, 255], // Savannah / Carolinas
+        [272, 270], [277, 287], [268, 289], [264, 274], // Florida / Miami
+        [248, 276], [236, 268], [225, 262], [220, 280], // Gulf of Mexico / Houston / New Orleans
+        [228, 292], [245, 296], [240, 308], // Yucatan
+        [248, 325], [256, 340], // Central America & Panama isthmus
+        [248, 342], [232, 322], [216, 306], // Pacific Central America
+        [205, 276], [198, 305], [192, 300], [198, 268], // Baja California
+        [186, 256], [179, 248], [172, 230], [168, 210], // Long Beach, LA, California coast
+        [168, 204], [174, 194], [162, 175], [145, 150], // Seattle, Vancouver, Alaska panhandle
+        [115, 140], [78, 145] // Alaska south coast
+      ],
+
+      // 2. Greenland
+      [
+        [310, 52], [350, 48], [375, 72], [358, 102], [330, 104], [308, 75]
+      ],
+
+      // 3. South America (Caribbean, Amazon delta, Brazil bulge, Santos/Rio, River Plate/Buenos Aires, Patagonia, Cape Horn, Chile, Peru)
+      [
+        [258, 340], [275, 335], [300, 330], [335, 340], [360, 355], // Colombia, Venezuela, Guianas
+        [380, 365], [405, 385], [398, 415], // Amazon mouth, Recife / Brazil bulge
+        [380, 432], [368, 444], [355, 460], // Rio, Santos
+        [342, 475], [332, 482], [335, 495], // Rio de la Plata, Buenos Aires
+        [325, 515], [318, 538], [308, 534], // Patagonia, Cape Horn tip
+        [302, 515], [295, 480], [290, 440], // Chile coast
+        [282, 395], [272, 360], [265, 345]  // Peru, Ecuador back to Colombia
+      ],
+
+      // 4. Great Britain
+      [
+        [462, 160], [474, 165], [480, 178], [468, 185], [458, 190], [455, 175], [458, 162]
+      ],
+
+      // 5. Ireland
+      [
+        [444, 170], [452, 172], [450, 185], [442, 182]
+      ],
+
+      // 6. Scandinavia & Finland
+      [
+        [488, 105], [515, 112], [530, 130], [518, 155], [502, 164], [486, 145], [482, 122]
+      ],
+
+      // 7. Mainland Europe (Low Countries, Germany, Baltic, Black Sea, Balkans, Greece, Italy boot, France, Iberian Peninsula)
+      [
+        [482, 188], [486, 176], [498, 169], [504, 166], [525, 165], // Antwerp, Rotterdam, Bremerhaven, Hamburg, Baltic
+        [548, 162], [562, 182], [556, 206], // Poland, Ukraine, Black Sea north
+        [550, 222], [538, 236], [530, 230], [518, 215], // Istanbul west, Piraeus / Greece, Adriatic
+        [514, 218], [520, 235], [512, 240], [502, 228], [496, 212], // Italy (Venice, Puglia, toe, Rome, Genoa)
+        [486, 214], [482, 195], // Marseille, French Atlantic
+        [476, 218], [482, 222], [473, 229], [465, 236], [456, 237], // Barcelona, Valencia, Algeciras / Gibraltar
+        [448, 232], [446, 216], [465, 214] // Portugal / Lisbon, Galicia, Bay of Biscay
+      ],
+
+      // 8. Africa (Gibraltar/Tangier, Maghreb, Egypt/Suez, Red Sea, Horn of Africa, Mozambique, Durban, Cape Town, West Africa)
+      [
+        [454, 239], [480, 242], [510, 246], [535, 252], [548, 250], [559, 253], // Tangier, Algiers, Tunis, Tripoli, Alexandria, Port Said
+        [562, 262], [574, 282], [590, 312], [605, 335], // Red Sea west coast, Bab-el-Mandeb
+        [622, 338], [615, 365], [595, 395], [580, 425], // Horn of Africa (Somalia), Kenya, Mozambique
+        [568, 450], [557, 464], [540, 475], [523, 476], // Durban, Port Elizabeth, Cape Town
+        [515, 470], [498, 440], [490, 400], [488, 360], // Namibia, Angola, Congo
+        [482, 335], [450, 332], [425, 315], [420, 290], // Nigeria, Gulf of Guinea, Ivory Coast, Senegal / Dakar
+        [432, 265], [445, 248] // Western Sahara, Morocco
+      ],
+
+      // 9. Madagascar
+      [
+        [598, 425], [610, 440], [606, 472], [594, 465], [592, 435]
+      ],
+
+      // 10. Arabian Peninsula (Sinai, Jeddah, Yemen, Oman, Dubai / Strait of Hormuz, Persian Gulf)
+      [
+        [562, 255], [575, 275], [582, 288], [595, 320], [625, 322], // Sinai, Jeddah, Yemen
+        [645, 300], [638, 273], [615, 270], [595, 255] // Oman, Dubai / Hormuz, Persian Gulf
+      ],
+
+      // 11. Asia Mainland (Iran, Pakistan, India, Bay of Bengal, Thailand, Indochina, Malay Peninsula, China East Coast, Korea, Siberia, Kamchatka)
+      [
+        [638, 270], [655, 285], [670, 295], // Iran & Pakistan / Karachi
+        [676, 300], [688, 330], [700, 350], [703, 320], [718, 290], // Mumbai, Goa, Cape Comorin, Chennai, Bengal
+        [728, 295], [735, 320], [746, 325], [765, 320], [775, 290], // Myanmar, Thailand / Bangkok, Vietnam
+        [745, 335], [747, 356], [754, 368], [758, 350], [750, 332], // Malay Peninsula (Port Klang, Singapore)
+        [780, 290], [788, 284], [792, 287], [796, 291], // Guangzhou, Shenzhen, Hong Kong
+        [806, 279], [822, 262], [822, 254], // Xiamen, Ningbo, Shanghai / Yangtze
+        [816, 237], [806, 227], [825, 220], // Qingdao, Tianjin / Bohai, Liaoning
+        [836, 225], [846, 243], [844, 230], // Korean Peninsula / Busan
+        [850, 215], [875, 195], [910, 160], [935, 140], [940, 90], [860, 80], [720, 75], [570, 85] // Siberia, Kamchatka, Bering
+      ],
+
+      // 12. Japan (Honshu & Hokkaido)
+      [
+        [852, 250], [862, 244], [867, 239], [878, 225], [874, 218], [858, 232] // Honshu (Tokyo / Yokohama)
+      ],
+      [
+        [876, 212], [890, 208], [885, 220], [874, 216] // Hokkaido
+      ],
+
+      // 13. Sri Lanka
+      [
+        [698, 344], [704, 345], [703, 355], [697, 352]
+      ],
+
+      // 14. Taiwan
+      [
+        [809, 280], [816, 282], [813, 290], [808, 287]
+      ],
+
+      // 15. Indonesian Archipelago & Philippines
+      [
+        [738, 350], [756, 365], [770, 385], [755, 390], [730, 360] // Sumatra
+      ],
+      [
+        [762, 388], [795, 395], [790, 400], [760, 395] // Java (Jakarta)
+      ],
+      [
+        [772, 340], [792, 335], [802, 360], [780, 375], [768, 355] // Borneo
+      ],
+      [
+        [805, 312], [815, 320], [818, 345], [810, 340], [802, 325] // Philippines (Manila)
+      ],
+
+      // 16. Australia & Tasmania
+      [
+        [825, 420], [845, 410], [860, 425], [880, 410], // Arnhem Land, Gulf of Carpentaria, Cape York
+        [890, 435], [888, 470], [878, 480], // Brisbane, Sydney, Melbourne
+        [865, 482], [840, 475], [815, 470], // Great Australian Bight, Esperance
+        [805, 460], [800, 430], [815, 415]  // Perth, North West Cape, Kimberley
+      ],
+      [
+        [872, 502], [882, 502], [880, 514], [870, 512] // Tasmania
+      ],
+
+      // 17. New Zealand
+      [
+        [940, 475], [955, 470], [950, 490], [938, 485] // North Island
+      ],
+      [
+        [932, 492], [945, 490], [938, 515], [926, 512] // South Island
+      ],
+
+      // 18. Cuba & Caribbean
+      [
+        [268, 296], [292, 298], [288, 305], [265, 302]
+      ]
+    ];
+
+    // Pass 1: Outer Continental Shelf / Bathymetry Halo
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.08)';
+    ctx.lineWidth = 3.5;
+    for (const poly of landmasses) {
+      ctx.beginPath();
+      ctx.moveTo(poly[0][0] * scaleX, poly[0][1] * scaleY);
+      for (let i = 1; i < poly.length; i++) {
+        ctx.lineTo(poly[i][0] * scaleX, poly[i][1] * scaleY);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    // Pass 2: Main Tactical Landmass Fill & High-Contrast Crisp Coastlines
+    ctx.fillStyle = 'rgba(12, 25, 44, 0.88)';
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.38)';
+    ctx.lineWidth = 1.2;
+    ctx.shadowColor = 'rgba(0, 210, 255, 0.2)';
+    ctx.shadowBlur = 4;
 
     for (const poly of landmasses) {
       ctx.beginPath();
@@ -373,6 +582,8 @@ export class WorldMap {
       ctx.fill();
       ctx.stroke();
     }
+
+    ctx.shadowBlur = 0;
   }
 
   private drawMajorShippingRoutes(scaleX: number, scaleY: number) {
