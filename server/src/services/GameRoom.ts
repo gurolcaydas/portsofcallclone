@@ -6,7 +6,8 @@ import {
   SHIP_BLUEPRINTS,
   INITIAL_PLAYER_SETUP,
   GlobalNewsItem,
-  calculatePortDistance
+  calculatePortDistance,
+  getRandomCompanyName
 } from '@portofcall/shared';
 import { MarketManager } from './MarketManager.js';
 import { Server } from 'socket.io';
@@ -46,12 +47,28 @@ export class GameRoom {
   }
 
   public addPlayer(id: string, name: string, color: string, sessionToken?: string): PlayerCompany {
+    let companyName = name?.trim();
+    const existingPlayerNames = Object.values(this.state.players).map((p) => p.name);
+    if (!companyName) {
+      companyName = getRandomCompanyName(existingPlayerNames);
+    } else {
+      // Avoid duplicate company names in the same room
+      const lowerNames = new Set(existingPlayerNames.map((n) => n.toLowerCase()));
+      if (lowerNames.has(companyName.toLowerCase())) {
+        let suffix = 2;
+        while (lowerNames.has(`${companyName} ${suffix}`.toLowerCase())) {
+          suffix++;
+        }
+        companyName = `${companyName} ${suffix}`;
+      }
+    }
+
     // Starting vessel: Coastal Tramp Steamer docked at Rotterdam
     const starterBlueprint = SHIP_BLUEPRINTS[0];
     const starterShip: PlayerShip = {
       id: `ship_${id}_1`,
       blueprintId: starterBlueprint.id,
-      name: `${name.toUpperCase()} PIONEER`,
+      name: `${companyName.toUpperCase()} PIONEER`,
       hullCondition: 92,
       engineCondition: 90,
       fuelTons: starterBlueprint.fuelCapacityTons * 0.8, // 80% full tank
@@ -63,7 +80,7 @@ export class GameRoom {
 
     const company: PlayerCompany = {
       id,
-      name,
+      name: companyName,
       color: color || INITIAL_PLAYER_SETUP.defaultColor,
       cash: INITIAL_PLAYER_SETUP.cash,
       loanBalance: INITIAL_PLAYER_SETUP.loanBalance,

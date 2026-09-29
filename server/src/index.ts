@@ -6,7 +6,8 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import {
   ClientToServerEvents,
-  ServerToClientEvents
+  ServerToClientEvents,
+  getRandomCompanyName
 } from '@portofcall/shared';
 import { RoomManager } from './services/RoomManager.js';
 
@@ -138,7 +139,7 @@ io.on('connection', (socket) => {
     try {
       const { roomCode, player, room, sessionToken } = roomManager.createRoom(
         socket,
-        data.companyName || 'Maritime Star Inc',
+        data.companyName?.trim() || getRandomCompanyName(),
         data.color || '#00d2ff',
         data.allowLateJoin !== false
       );
@@ -156,7 +157,7 @@ io.on('connection', (socket) => {
       const result = roomManager.joinRoom(
         socket,
         data.roomCode,
-        data.companyName || 'Oceanic Corp',
+        data.companyName?.trim() || getRandomCompanyName(),
         data.color || '#f7b731'
       );
       if (!result.success || !result.room) {

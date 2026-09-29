@@ -4,7 +4,7 @@ import { WorldMap } from './ui/WorldMap.js';
 import { HarborDocking3D } from './minigames/HarborDocking3D.js';
 import { HazardNav3D } from './minigames/HazardNav3D.js';
 import { sounds } from './sound/SoundManager.js';
-import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo } from '@portofcall/shared';
+import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, getRandomCompanyName } from '@portofcall/shared';
 
 class App {
   private network: NetworkClient;
@@ -135,7 +135,7 @@ class App {
         if (!code) return;
 
         const nameInput = document.getElementById('input-browser-company') as HTMLInputElement;
-        const companyName = nameInput?.value.trim() || 'Oceanic Trader';
+        const companyName = nameInput?.value.trim() || getRandomCompanyName();
         const color = '#00d2ff';
 
         const res = await this.network.joinRoom(code, companyName, color);
@@ -211,6 +211,33 @@ class App {
       sounds.playBell();
     });
 
+    // Initialize random company names across inputs and wire up 🎲 dice buttons
+    const initialCompanyName = getRandomCompanyName();
+    const companyInputs = [
+      document.getElementById('input-browser-company') as HTMLInputElement,
+      document.getElementById('input-host-company') as HTMLInputElement,
+      document.getElementById('input-join-company') as HTMLInputElement
+    ].filter(Boolean);
+
+    companyInputs.forEach((inp) => {
+      if (!inp.value.trim()) inp.value = initialCompanyName;
+    });
+
+    document.querySelectorAll('.btn-dice-reroll').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const targetId = (e.currentTarget as HTMLElement).getAttribute('data-target');
+        const input = targetId ? (document.getElementById(targetId) as HTMLInputElement) : null;
+        if (input) {
+          const newName = getRandomCompanyName([input.value]);
+          input.value = newName;
+          input.classList.remove('flash-update');
+          void input.offsetWidth;
+          input.classList.add('flash-update');
+          sounds.playBell();
+        }
+      });
+    });
+
     // Color Pickers
     this.setupColorPicker('host-color-picker');
     this.setupColorPicker('join-color-picker');
@@ -220,7 +247,7 @@ class App {
     createBtn?.addEventListener('click', async () => {
       const nameInput = document.getElementById('input-host-company') as HTMLInputElement;
       const color = this.getSelectedColor('host-color-picker');
-      const companyName = nameInput?.value.trim() || 'Transatlantic Star';
+      const companyName = nameInput?.value.trim() || getRandomCompanyName();
       const allowLateJoin = (document.getElementById('check-allow-late-join') as HTMLInputElement)?.checked ?? true;
 
       const res = await this.network.createRoom(companyName, color, allowLateJoin);
@@ -243,7 +270,7 @@ class App {
       const nameInput = document.getElementById('input-join-company') as HTMLInputElement;
       const color = this.getSelectedColor('join-color-picker');
       const code = codeInput?.value.trim().toUpperCase();
-      const companyName = nameInput?.value.trim() || 'Oceanic Corp';
+      const companyName = nameInput?.value.trim() || getRandomCompanyName();
 
       if (!code || code.length < 4) {
         this.ui.showToast('Please enter a valid 4-character room code', 'warning');

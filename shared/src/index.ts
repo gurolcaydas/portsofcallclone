@@ -491,3 +491,104 @@ export function calculatePortDistance(p1: Port, p2: Port): number {
   // Add a maritime sea route curvature multiplier (land masses detour factor ~ 1.3)
   return Math.round(Math.max(300, rawDist * 1.32));
 }
+
+// Curated list of iconic historical and realistic maritime shipping company names
+export const MARITIME_COMPANY_NAMES: string[] = [
+  'Blue Star Line',
+  'Nordic Merchant Marine',
+  'Hanseatic Steamship Co.',
+  'Seven Seas Freight',
+  'Poseidon Commercial Lines',
+  'North Sea Logistics',
+  'Royal Atlantic Steamship',
+  'Baltic Navigation Corp',
+  'Cape Horn Transport',
+  'Pacific Crest Maritime',
+  'Mediterranean Cargo Lines',
+  'Silver Wave Shipping',
+  'Golden Horn Oceanics',
+  'Red Anchor Line',
+  'Equator Marine Transport',
+  'Tradewinds Navigation',
+  'Meridian Steamship Ltd',
+  'Black Sea Consortium',
+  'Orient Maritime Express',
+  'Zephyr Ocean Freight',
+  'Phoenix Sea Lines',
+  'Trident Bulk Carriers',
+  'Vanguard Cargo Lines',
+  'Atlas Marine Fleet',
+  'Endeavour Shipping Co.',
+  'Solent Maritime Express',
+  'Gibraltar Ocean Lines',
+  'Boreas Arctic Shipping',
+  'Celtic Sea Logistics',
+  'Pioneer Freight Lines',
+  'Sovereign Maritime Corp',
+  'Iron Anchor Steamship',
+  'Straits Maritime Ltd',
+  'Corsair Commercial Fleet',
+  'Helgoland Cargo Transport',
+  'Monsoon Sea Traders',
+  'Argonaut Marine Lines',
+  'Bosphorus Navigation',
+  'Neptune Global Freight',
+  'Aegean Steamship Co.',
+  'Clipper Ocean Express',
+  'Adriatic Bulk Logistics',
+  'Polar Star Shipping',
+  'Australis Maritime',
+  'Liberty Freight Lines',
+  'Enterprise Sea Transport',
+  'Mermaid Commercial Line',
+  'Horizon Wave Marine',
+  'Antilles Shipping Co.',
+  'Levant Cargo Lines',
+  'Caledonian Steamship',
+  'Magellan Ocean Transport',
+  'Scandia Cargo Fleet',
+  'Biscay Commercial Line',
+  'Viking Freight Logistics'
+];
+
+export const MARITIME_PREFIXES = [
+  'Atlantic', 'Pacific', 'Nordic', 'Baltic', 'Hanseatic', 'Oceanic',
+  'Blue Star', 'Red Anchor', 'Silver Wave', 'Golden Horn', 'Seven Seas',
+  'Royal', 'North Sea', 'Cape Horn', 'Equator', 'Tradewinds', 'Poseidon',
+  'Neptune', 'Trident', 'Atlas', 'Vanguard', 'Phoenix', 'Aegean', 'Adriatic',
+  'Bosphorus', 'Solent', 'Gibraltar', 'Celtic', 'Polar', 'Meridian'
+];
+
+export const MARITIME_SUFFIXES = [
+  'Shipping Line', 'Maritime Corp', 'Steamship Co.', 'Cargo Lines',
+  'Freight Express', 'Ocean Transport', 'Navigation Co.', 'Merchant Fleet',
+  'Bulk Carriers', 'Logistics Ltd', 'Commercial Marine', 'Sea Traders'
+];
+
+export function getRandomCompanyName(excludeNames: string[] = []): string {
+  const normalizedExclude = new Set(excludeNames.map((n) => n.trim().toLowerCase()));
+
+  // 1. Try picking from curated iconic list first
+  const availableCurated = MARITIME_COMPANY_NAMES.filter(
+    (n) => !normalizedExclude.has(n.toLowerCase())
+  );
+  if (availableCurated.length > 0) {
+    const idx = Math.floor(Math.random() * availableCurated.length);
+    return availableCurated[idx];
+  }
+
+  // 2. Procedural generation fallback (combines prefix + suffix)
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const pre = MARITIME_PREFIXES[Math.floor(Math.random() * MARITIME_PREFIXES.length)];
+    const suf = MARITIME_SUFFIXES[Math.floor(Math.random() * MARITIME_SUFFIXES.length)];
+    const candidate = `${pre} ${suf}`;
+    if (!normalizedExclude.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  // 3. Numbered fallback
+  const base = MARITIME_COMPANY_NAMES[Math.floor(Math.random() * MARITIME_COMPANY_NAMES.length)];
+  return `${base} ${Math.floor(Math.random() * 900 + 100)}`;
+}
+

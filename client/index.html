@@ -87,7 +87,10 @@
 
             <div class="browser-player-bar">
               <label for="input-browser-company">Your Company Name:</label>
-              <input type="text" id="input-browser-company" value="Oceanic Trader" maxlength="28" placeholder="Company Name">
+              <div class="company-name-input-group">
+                <input type="text" id="input-browser-company" maxlength="28" placeholder="e.g. Blue Star Line">
+                <button type="button" class="btn-dice-reroll" data-target="input-browser-company" title="Generate another random maritime company name">🎲</button>
+              </div>
             </div>
 
             <div id="browser-room-list" class="room-list-container">
@@ -99,7 +102,10 @@
           <div id="panel-host" class="tab-panel">
             <div class="form-group">
               <label for="input-host-company">Shipping Line Name</label>
-              <input type="text" id="input-host-company" value="Transatlantic Star" maxlength="28" placeholder="e.g. Blue Star Maritime">
+              <div class="company-name-input-group">
+                <input type="text" id="input-host-company" maxlength="28" placeholder="e.g. Blue Star Line">
+                <button type="button" class="btn-dice-reroll" data-target="input-host-company" title="Generate another random maritime company name">🎲</button>
+              </div>
             </div>
             <div class="form-group">
               <label>House Colors (Hull & Flags)</label>
@@ -132,7 +138,10 @@
             </div>
             <div class="form-group">
               <label for="input-join-company">Shipping Line Name</label>
-              <input type="text" id="input-join-company" value="Pacific Navigator" maxlength="28" placeholder="e.g. Orient Express">
+              <div class="company-name-input-group">
+                <input type="text" id="input-join-company" maxlength="28" placeholder="e.g. Blue Star Line">
+                <button type="button" class="btn-dice-reroll" data-target="input-join-company" title="Generate another random maritime company name">🎲</button>
+              </div>
             </div>
             <div class="form-group">
               <label>House Colors</label>
