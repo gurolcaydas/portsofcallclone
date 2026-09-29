@@ -1,0 +1,52 @@
+{
+  "lifetimeRoomsCreated": 14,
+  "lifetimeCaptainsRegistered": 38,
+  "lifetimeContractsDelivered": 156,
+  "archivedGames": [
+    {
+      "roomCode": "PAC1",
+      "hostName": "Pacific Rim Steamship Co.",
+      "concludedAt": 1790680826817,
+      "durationMinutes": 48,
+      "totalDays": 24,
+      "totalPlayers": 4,
+      "topCompany": {
+        "name": "Pacific Rim Steamship Co.",
+        "cash": 1820000,
+        "shipsCount": 5,
+        "homePortId": "singapore"
+      },
+      "totalContractsCompleted": 19
+    },
+    {
+      "roomCode": "ATL8",
+      "hostName": "Transatlantic Express Lines",
+      "concludedAt": 1790670026817,
+      "durationMinutes": 62,
+      "totalDays": 31,
+      "totalPlayers": 3,
+      "topCompany": {
+        "name": "Transatlantic Express Lines",
+        "cash": 2450000,
+        "shipsCount": 6,
+        "homePortId": "rotterdam"
+      },
+      "totalContractsCompleted": 27
+    },
+    {
+      "roomCode": "MED4",
+      "hostName": "Levant Trading Syndicate",
+      "concludedAt": 1790644826817,
+      "durationMinutes": 35,
+      "totalDays": 18,
+      "totalPlayers": 2,
+      "topCompany": {
+        "name": "Levant Trading Syndicate",
+        "cash": 980000,
+        "shipsCount": 3,
+        "homePortId": "istanbul"
+      },
+      "totalContractsCompleted": 12
+    }
+  ]
+}

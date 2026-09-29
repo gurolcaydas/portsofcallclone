@@ -71,10 +71,58 @@
             <p class="subtitle">Global Multiplayer Maritime Empire Simulation</p>
           </div>
 
+          <!-- Real-Time Global Maritime Telemetry Grid -->
+          <div class="lobby-stats-grid">
+            <div class="lobby-stat-card" title="Captains currently connected to Ports of Call server">
+              <div class="stat-indicator online-pulse"></div>
+              <div class="stat-meta">
+                <span class="stat-label">CAPTAINS ONLINE</span>
+                <span class="stat-number" id="stats-online-users">1</span>
+              </div>
+            </div>
+            <div class="lobby-stat-card" title="Live multiplayer voyage rooms running">
+              <span class="stat-icon">🚢</span>
+              <div class="stat-meta">
+                <span class="stat-label">RUNNING ROOMS</span>
+                <span class="stat-number" id="stats-running-rooms">0</span>
+              </div>
+            </div>
+            <div class="lobby-stat-card" title="Active player ships in service globally">
+              <span class="stat-icon">⚓</span>
+              <div class="stat-meta">
+                <span class="stat-label">FLEETS AT SEA</span>
+                <span class="stat-number" id="stats-active-fleets">0</span>
+              </div>
+            </div>
+            <div class="lobby-stat-card" title="Total completed freight & passenger charter deliveries">
+              <span class="stat-icon">📦</span>
+              <div class="stat-meta">
+                <span class="stat-label">DELIVERIES COMPLETED</span>
+                <span class="stat-number" id="stats-total-contracts">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active / Recent Session Fast-Resume Banner -->
+          <div id="lobby-recent-session-alert" class="recent-session-banner hidden">
+            <div class="session-info">
+              <span class="pulse-dot"></span>
+              <div class="session-text">
+                <div class="session-title">PREVIOUS ACTIVE COMMAND: <strong id="recent-session-company">--</strong></div>
+                <div class="session-sub">Voyage: <span id="recent-session-code" class="code-tag">----</span> • HQ: <span id="recent-session-port">Rotterdam</span></div>
+              </div>
+            </div>
+            <div class="session-actions">
+              <button id="btn-resume-session" class="btn btn-success btn-sm btn-glow">⚡ Resume Command</button>
+              <button id="btn-dismiss-session" class="btn btn-secondary btn-sm" title="Dismiss session banner">✕</button>
+            </div>
+          </div>
+
           <div class="lobby-tabs">
-            <button id="tab-browse" class="tab-btn active">🚢 Live Fleets (Browser)</button>
-            <button id="tab-host" class="tab-btn">⚓ Found Company (Host)</button>
+            <button id="tab-browse" class="tab-btn active">🚢 Live Fleets</button>
+            <button id="tab-host" class="tab-btn">⚓ Found Company</button>
             <button id="tab-join" class="tab-btn">🔑 Enter Code</button>
+            <button id="tab-history" class="tab-btn">📜 Archives & History</button>
           </div>
 
           <!-- Panel 1: Live Public Rooms Browser -->
@@ -175,6 +223,33 @@
               </div>
             </div>
             <button id="btn-join-room" class="btn btn-primary">Join Voyage</button>
+          </div>
+
+          <!-- Panel 4: Archives, Recent Logins & Concluded Voyages -->
+          <div id="panel-history" class="tab-panel">
+            <div class="history-container">
+              <!-- Section A: Player's Own Login / Career History -->
+              <div class="history-section">
+                <div class="history-section-header">
+                  <h4>🎖️ YOUR RECENT LOGINS & SHIPPING LINES</h4>
+                  <button id="btn-clear-history" class="btn btn-secondary btn-xs" title="Clear local device login history">Clear</button>
+                </div>
+                <div id="player-login-history-list" class="history-cards-list">
+                  <!-- Populated dynamically from localStorage -->
+                </div>
+              </div>
+
+              <!-- Section B: Server Global Concluded Games & Historical Rooms -->
+              <div class="history-section" style="margin-top: 1.25rem;">
+                <div class="history-section-header">
+                  <h4>🌐 SERVER VOYAGE ARCHIVES & CONCLUDED EXPEDITIONS</h4>
+                  <span id="archive-count-badge" class="room-count-badge">0 Archived</span>
+                </div>
+                <div id="server-archive-history-list" class="history-cards-list">
+                  <!-- Populated from server stats recentGames -->
+                </div>
+              </div>
+            </div>
           </div>
 
           <div id="lobby-waiting-area" class="hidden">

@@ -140,6 +140,32 @@ export interface GameState {
   startedAt?: number;
 }
 
+export interface ArchivedGameRecord {
+  roomCode: string;
+  hostName: string;
+  concludedAt: number;
+  durationMinutes: number;
+  totalDays: number;
+  totalPlayers: number;
+  topCompany?: {
+    name: string;
+    cash: number;
+    shipsCount: number;
+    homePortId: string;
+  };
+  totalContractsCompleted: number;
+}
+
+export interface ServerGlobalStats {
+  onlineUsers: number;
+  activeRoomsCount: number;
+  activeFleetsCount: number;
+  totalContractsDelivered: number;
+  lifetimeRoomsCreated: number;
+  lifetimeCaptainsRegistered: number;
+  recentGames: ArchivedGameRecord[];
+}
+
 // Socket communication protocol
 export interface ServerToClientEvents {
   'room:state': (state: GameState) => void;
@@ -148,6 +174,7 @@ export interface ServerToClientEvents {
   'player:action_result': (result: { success: boolean; message: string; action: string }) => void;
   'minigame:start': (data: { shipId: string; type: 'docking' | 'hazard'; portId?: string; hazardType?: string }) => void;
   'room:list_update': (rooms: PublicRoomInfo[]) => void;
+  'stats:update': (stats: ServerGlobalStats) => void;
   'error': (message: string) => void;
 }
 
@@ -158,6 +185,7 @@ export interface ClientToServerEvents {
   'room:leave': () => void;
   'room:start_game': () => void;
   'room:list': (callback: (rooms: PublicRoomInfo[]) => void) => void;
+  'stats:get': (callback: (stats: ServerGlobalStats) => void) => void;
   'action:accept_charter': (data: { shipId: string; contractId: string }) => void;
   'action:bunker_fuel': (data: { shipId: string; tons: number }) => void;
   'action:buy_ship': (data: { blueprintId: string; shipName: string }) => void;

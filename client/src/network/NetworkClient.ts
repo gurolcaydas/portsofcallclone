@@ -4,7 +4,8 @@ import {
   GlobalNewsItem,
   ClientToServerEvents,
   ServerToClientEvents,
-  PublicRoomInfo
+  PublicRoomInfo,
+  ServerGlobalStats
 } from '@portofcall/shared';
 
 export class NetworkClient {
@@ -19,6 +20,7 @@ export class NetworkClient {
   public onActionResult: ((res: { success: boolean; message: string; action: string }) => void) | null = null;
   public onMinigameStart: ((data: { shipId: string; type: 'docking' | 'hazard'; portId?: string; hazardType?: string }) => void) | null = null;
   public onRoomListUpdate: ((rooms: PublicRoomInfo[]) => void) | null = null;
+  public onStatsUpdate: ((stats: ServerGlobalStats) => void) | null = null;
   public onError: ((msg: string) => void) | null = null;
 
   constructor() {
@@ -44,6 +46,10 @@ export class NetworkClient {
       if (this.onRoomListUpdate) this.onRoomListUpdate(rooms);
     });
 
+    this.socket.on('stats:update', (stats: ServerGlobalStats) => {
+      if (this.onStatsUpdate) this.onStatsUpdate(stats);
+    });
+
     this.socket.on('game:news', (news: GlobalNewsItem) => {
       if (this.onNews) this.onNews(news);
     });
@@ -58,6 +64,14 @@ export class NetworkClient {
 
     this.socket.on('error', (msg: string) => {
       if (this.onError) this.onError(msg);
+    });
+  }
+
+  public getStats(): Promise<ServerGlobalStats> {
+    return new Promise((resolve) => {
+      this.socket.emit('stats:get', (stats) => {
+        resolve(stats);
+      });
     });
   }
 

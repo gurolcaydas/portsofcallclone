@@ -121,11 +121,24 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
+app.get('/api/stats', (req, res) => {
+  res.json(roomManager.getGlobalStats());
+});
+
 io.on('connection', (socket) => {
   console.log(`[Socket Connected] ID: ${socket.id}`);
 
-  // Send initial room list on connection
+  // Send initial room list & global stats on connection
   socket.emit('room:list_update', roomManager.getPublicRoomList());
+  socket.emit('stats:update', roomManager.getGlobalStats());
+  roomManager.broadcastStats();
+
+  // Stats query
+  socket.on('stats:get', (callback) => {
+    if (typeof callback === 'function') {
+      callback(roomManager.getGlobalStats());
+    }
+  });
 
   // Room list query
   socket.on('room:list', (callback) => {

@@ -2417,3 +2417,260 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* =========================================================
+   LOBBY TELEMETRY & STATS GRID
+   ========================================================= */
+.lobby-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0.4rem 0 1rem 0;
+}
+
+@media (max-width: 600px) {
+  .lobby-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.lobby-stat-card {
+  background: rgba(10, 22, 38, 0.72);
+  border: 1px solid rgba(0, 210, 255, 0.22);
+  border-radius: 9px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lobby-stat-card:hover {
+  border-color: rgba(0, 210, 255, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 210, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.stat-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.stat-indicator.online-pulse {
+  width: 10px;
+  height: 10px;
+  background: #2ed573;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #2ed573;
+  animation: pulse-indicator 1.8s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-indicator {
+  0% { transform: scale(0.9); box-shadow: 0 0 4px #2ed573; }
+  50% { transform: scale(1.2); box-shadow: 0 0 14px #2ed573, 0 0 22px rgba(46, 213, 115, 0.4); }
+  100% { transform: scale(0.9); box-shadow: 0 0 4px #2ed573; }
+}
+
+.stat-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-meta .stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #7f9bb6;
+  text-transform: uppercase;
+}
+
+.stat-meta .stat-number {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #e2f1ff;
+  line-height: 1.1;
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.35);
+}
+
+/* Recent Session Fast-Resume Banner */
+.recent-session-banner {
+  background: linear-gradient(135deg, rgba(7, 30, 48, 0.9) 0%, rgba(13, 48, 70, 0.85) 100%);
+  border: 1px solid rgba(46, 213, 115, 0.45);
+  border-radius: 9px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(46, 213, 115, 0.12);
+  animation: slide-toast 0.3s ease-out;
+}
+
+.recent-session-banner .session-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recent-session-banner .pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2ed573;
+  box-shadow: 0 0 8px #2ed573;
+  animation: pulse-indicator 1.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.recent-session-banner .session-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2f1ff;
+}
+
+.recent-session-banner .session-title strong {
+  color: #2ed573;
+  letter-spacing: 0.5px;
+}
+
+.recent-session-banner .session-sub {
+  font-size: 0.73rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.recent-session-banner .session-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =========================================================
+   ARCHIVES & HISTORY TAB PANEL
+   ========================================================= */
+.history-container {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.history-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-container::-webkit-scrollbar-track {
+  background: rgba(4, 13, 26, 0.6);
+  border-radius: 4px;
+}
+
+.history-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 210, 255, 0.3);
+  border-radius: 4px;
+}
+
+.history-section {
+  background: rgba(8, 18, 32, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.history-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.history-section-header h4 {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  color: #00d2ff;
+  margin: 0;
+}
+
+.btn-xs {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.history-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-entry-card {
+  background: rgba(14, 27, 44, 0.75);
+  border: 1px solid rgba(0, 210, 255, 0.16);
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.history-entry-card:hover {
+  background: rgba(17, 34, 56, 0.9);
+  border-color: rgba(0, 210, 255, 0.4);
+}
+
+.history-entry-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.history-company-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-color-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.history-company-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.history-meta-row {
+  font-size: 0.72rem;
+  color: #8da4be;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.empty-history-note {
+  text-align: center;
+  color: #6d849e;
+  font-size: 0.8rem;
+  padding: 1rem 0;
+  font-style: italic;
+}

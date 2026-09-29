@@ -4,7 +4,7 @@ import { WorldMap } from './ui/WorldMap.js';
 import { HarborDocking3D } from './minigames/HarborDocking3D.js';
 import { HazardNav3D } from './minigames/HazardNav3D.js';
 import { sounds } from './sound/SoundManager.js';
-import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, getRandomCompanyName, calculateHomePortCost } from '@portofcall/shared';
+import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, ServerGlobalStats, getRandomCompanyName, calculateHomePortCost } from '@portofcall/shared';
 
 class App {
   private network: NetworkClient;
@@ -15,6 +15,7 @@ class App {
   private activeMinigameShipId: string | null = null;
   private currentState: GameState | null = null;
   private cachedRooms: PublicRoomInfo[] = [];
+  private cachedStats: ServerGlobalStats | null = null;
 
   constructor() {
     this.network = new NetworkClient();
@@ -37,8 +38,19 @@ class App {
 
     this.setupLobbyEvents();
     this.setupNetworkEvents();
-    this.checkExistingSession();
+    this.initRecentSessionBanner();
     this.refreshRoomBrowser();
+    this.fetchInitialStats();
+    this.renderPlayerHistory();
+  }
+
+  private async fetchInitialStats() {
+    try {
+      const stats = await this.network.getStats();
+      if (stats) this.renderServerStats(stats);
+    } catch (e) {
+      console.warn('Initial stats fetch skipped', e);
+    }
   }
 
   private async refreshRoomBrowser() {
@@ -157,6 +169,7 @@ class App {
             'poc_session',
             JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color, homePortId })
           );
+          this.recordPlayerLogin(companyName, code, homePortId, color, res.sessionToken);
           this.showWaitingLobby(code, false);
           sounds.playFoghorn();
           this.ui.showToast(`Joined Shipping Syndicate ${code}!`, 'success');
@@ -167,39 +180,216 @@ class App {
     });
   }
 
-  private async checkExistingSession() {
+  private initRecentSessionBanner() {
+    const saved = localStorage.getItem('poc_session');
+    const alert = document.getElementById('lobby-recent-session-alert');
+    if (!saved || !alert) return;
+
+    try {
+      const session = JSON.parse(saved);
+      if (session.roomCode && session.companyName) {
+        const compEl = document.getElementById('recent-session-company');
+        const codeEl = document.getElementById('recent-session-code');
+        const portEl = document.getElementById('recent-session-port');
+        const portObj = WORLD_PORTS.find((p) => p.id === session.homePortId);
+
+        if (compEl) compEl.textContent = session.companyName;
+        if (codeEl) codeEl.textContent = session.roomCode;
+        if (portEl) portEl.textContent = portObj ? portObj.name : 'Rotterdam';
+
+        alert.classList.remove('hidden');
+
+        document.getElementById('btn-resume-session')?.addEventListener('click', () => {
+          this.resumeSavedSession();
+        });
+
+        document.getElementById('btn-dismiss-session')?.addEventListener('click', () => {
+          alert.classList.add('hidden');
+        });
+      }
+    } catch (e) {
+      alert.classList.add('hidden');
+    }
+  }
+
+  private async resumeSavedSession() {
     const saved = localStorage.getItem('poc_session');
     if (!saved) return;
     try {
       const session = JSON.parse(saved);
       if (session.roomCode && session.sessionToken) {
-        console.log('Attempting session reconnection:', session.roomCode);
+        this.ui.showToast(`Contacting port control for voyage ${session.roomCode}...`, 'info');
         const res = await this.network.reconnect(session.roomCode, session.sessionToken);
         if (res.success) {
           this.ui.showToast(`Reconnected to Shipping Company (${session.roomCode})!`, 'success');
           sounds.playBell();
+          document.getElementById('lobby-recent-session-alert')?.classList.add('hidden');
         } else {
-          console.log('Session expired:', res.error);
+          this.ui.showToast(`Voyage has concluded: ${res.error || 'Room expired'}`, 'warning');
           localStorage.removeItem('poc_session');
+          document.getElementById('lobby-recent-session-alert')?.classList.add('hidden');
         }
       }
     } catch (e) {
       localStorage.removeItem('poc_session');
+      document.getElementById('lobby-recent-session-alert')?.classList.add('hidden');
+    }
+  }
+
+  private recordPlayerLogin(companyName: string, roomCode: string, homePortId: string, color: string, sessionToken: string) {
+    try {
+      const raw = localStorage.getItem('poc_player_history');
+      const list = raw ? JSON.parse(raw) : [];
+      const filtered = Array.isArray(list) ? list.filter((item: any) => item.roomCode !== roomCode) : [];
+      filtered.unshift({
+        companyName,
+        roomCode,
+        homePortId,
+        color,
+        sessionToken,
+        timestamp: Date.now()
+      });
+      localStorage.setItem('poc_player_history', JSON.stringify(filtered.slice(0, 10)));
+      this.renderPlayerHistory();
+    } catch (e) {
+      console.warn('Failed to record player login history', e);
+    }
+  }
+
+  private renderPlayerHistory() {
+    const container = document.getElementById('player-login-history-list');
+    if (!container) return;
+
+    try {
+      const raw = localStorage.getItem('poc_player_history');
+      const list: Array<{ companyName: string; roomCode: string; homePortId: string; color: string; sessionToken: string; timestamp: number }> = raw ? JSON.parse(raw) : [];
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `<div class="empty-history-note">No recent commands recorded on this browser. Establish or join a voyage to build your maritime logbook!</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((item) => {
+        const port = WORLD_PORTS.find((p) => p.id === item.homePortId);
+        const portName = port ? port.name : item.homePortId || 'Rotterdam';
+        const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        return `
+          <div class="history-entry-card">
+            <div class="history-entry-main">
+              <div class="history-company-row">
+                <span class="history-color-badge" style="background: ${item.color || '#00d2ff'};"></span>
+                <strong class="history-company-name">${item.companyName}</strong>
+                <span class="code-tag">${item.roomCode}</span>
+              </div>
+              <div class="history-meta-row">
+                <span>⚓ HQ: ${portName}</span>
+                <span>•</span>
+                <span>🕒 ${dateStr}</span>
+              </div>
+            </div>
+            <div class="history-actions">
+              <button class="btn btn-secondary btn-sm btn-rejoin-history" data-code="${item.roomCode}" data-token="${item.sessionToken}">
+                ⚡ Resume
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.btn-rejoin-history').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          const target = e.currentTarget as HTMLElement;
+          const code = target.getAttribute('data-code');
+          const token = target.getAttribute('data-token');
+          if (!code || !token) return;
+
+          this.ui.showToast(`Contacting port control for voyage ${code}...`, 'info');
+          const res = await this.network.reconnect(code, token);
+          if (res.success) {
+            this.ui.showToast(`Reconnected to ${code}!`, 'success');
+            sounds.playBell();
+          } else {
+            this.ui.showToast(`Room ${code} is closed or session expired`, 'warning');
+          }
+        });
+      });
+    } catch (e) {
+      container.innerHTML = `<div class="empty-history-note">Error loading past login records.</div>`;
+    }
+  }
+
+  private renderServerStats(stats: ServerGlobalStats) {
+    this.cachedStats = stats;
+
+    const elOnline = document.getElementById('stats-online-users');
+    const elRooms = document.getElementById('stats-running-rooms');
+    const elFleets = document.getElementById('stats-active-fleets');
+    const elContracts = document.getElementById('stats-total-contracts');
+    const elBadge = document.getElementById('archive-count-badge');
+    const archiveList = document.getElementById('server-archive-history-list');
+
+    if (elOnline) elOnline.textContent = String(stats.onlineUsers ?? 1);
+    if (elRooms) elRooms.textContent = String(stats.activeRoomsCount ?? 0);
+    if (elFleets) elFleets.textContent = String(stats.activeFleetsCount ?? 0);
+    if (elContracts) elContracts.textContent = Number(stats.totalContractsDelivered ?? 0).toLocaleString();
+    if (elBadge) elBadge.textContent = `${stats.recentGames?.length || 0} Archived`;
+
+    if (archiveList) {
+      if (!stats.recentGames || stats.recentGames.length === 0) {
+        archiveList.innerHTML = `<div class="empty-history-note">No concluded voyages in server log yet. Active expeditions are currently at sea!</div>`;
+        return;
+      }
+
+      archiveList.innerHTML = stats.recentGames.map((game) => {
+        const timeAgoMinutes = Math.max(1, Math.round((Date.now() - game.concludedAt) / 60000));
+        const timeText = timeAgoMinutes < 60 ? `${timeAgoMinutes}m ago` : `${Math.round(timeAgoMinutes / 60)}h ago`;
+        const topComp = game.topCompany;
+
+        return `
+          <div class="history-entry-card">
+            <div class="history-entry-main">
+              <div class="history-company-row">
+                <span class="code-tag">${game.roomCode}</span>
+                <strong class="history-company-name">${game.hostName}</strong>
+                <span class="badge" style="background: rgba(46, 213, 115, 0.15); color: #2ed573; border: 1px solid #2ed573; font-size: 0.68rem; padding: 2px 6px;">CONCLUDED</span>
+              </div>
+              <div class="history-meta-row">
+                <span>⏳ Day ${game.totalDays} (${game.durationMinutes}m)</span>
+                <span>•</span>
+                <span>🚢 ${game.totalPlayers} Fleet${game.totalPlayers > 1 ? 's' : ''}</span>
+                <span>•</span>
+                <span>📦 ${game.totalContractsCompleted} Charters Fulfilled</span>
+                <span>•</span>
+                <span>🕒 ${timeText}</span>
+              </div>
+              ${topComp ? `
+                <div style="font-size: 0.73rem; color: #a4c2e0; margin-top: 3px;">
+                  🏆 Flagship Fleet: <strong>${topComp.name}</strong> • Peak Treasury: <strong style="color: #2ed573;">$${topComp.cash.toLocaleString()}</strong> (${topComp.shipsCount} ship${topComp.shipsCount > 1 ? 's' : ''})
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
   }
 
   private setupLobbyEvents() {
-    // 3 Tabs: Browser, Host & Join
+    // 4 Tabs: Browser, Host, Join & History/Archives
     const tabBrowse = document.getElementById('tab-browse');
     const tabHost = document.getElementById('tab-host');
     const tabJoin = document.getElementById('tab-join');
+    const tabHistory = document.getElementById('tab-history');
+
     const panelBrowse = document.getElementById('panel-browse');
     const panelHost = document.getElementById('panel-host');
     const panelJoin = document.getElementById('panel-join');
+    const panelHistory = document.getElementById('panel-history');
 
     const switchLobbyTab = (activeTab: HTMLElement | null, activePanel: HTMLElement | null) => {
-      [tabBrowse, tabHost, tabJoin].forEach((t) => t?.classList.remove('active'));
-      [panelBrowse, panelHost, panelJoin].forEach((p) => p?.classList.remove('active'));
+      [tabBrowse, tabHost, tabJoin, tabHistory].forEach((t) => t?.classList.remove('active'));
+      [panelBrowse, panelHost, panelJoin, panelHistory].forEach((p) => p?.classList.remove('active'));
       activeTab?.classList.add('active');
       activePanel?.classList.add('active');
     };
@@ -215,6 +405,22 @@ class App {
 
     tabJoin?.addEventListener('click', () => {
       switchLobbyTab(tabJoin, panelJoin);
+    });
+
+    tabHistory?.addEventListener('click', () => {
+      switchLobbyTab(tabHistory, panelHistory);
+      this.renderPlayerHistory();
+      if (this.cachedStats) this.renderServerStats(this.cachedStats);
+      sounds.playBell();
+    });
+
+    // Clear Player History Button
+    document.getElementById('btn-clear-history')?.addEventListener('click', () => {
+      if (confirm('Clear local login & company history from this device?')) {
+        localStorage.removeItem('poc_player_history');
+        this.renderPlayerHistory();
+        sounds.playBell();
+      }
     });
 
     // Refresh Rooms Button
@@ -274,6 +480,7 @@ class App {
           'poc_session',
           JSON.stringify({ roomCode: res.roomCode, sessionToken: res.sessionToken, companyName, color, homePortId })
         );
+        this.recordPlayerLogin(companyName, res.roomCode, homePortId, color, res.sessionToken);
         this.showWaitingLobby(res.roomCode, true);
         sounds.playFoghorn();
       } else {
@@ -303,6 +510,7 @@ class App {
           'poc_session',
           JSON.stringify({ roomCode: code, sessionToken: res.sessionToken, companyName, color, homePortId })
         );
+        this.recordPlayerLogin(companyName, code, homePortId, color, res.sessionToken);
         this.showWaitingLobby(code, false);
         sounds.playFoghorn();
       } else {
@@ -419,6 +627,7 @@ class App {
     document.getElementById('panel-browse')?.classList.remove('active');
     document.getElementById('panel-host')?.classList.remove('active');
     document.getElementById('panel-join')?.classList.remove('active');
+    document.getElementById('panel-history')?.classList.remove('active');
     document.querySelector('.lobby-tabs')?.classList.add('hidden');
 
     const waiting = document.getElementById('lobby-waiting-area');
@@ -436,6 +645,10 @@ class App {
   private setupNetworkEvents() {
     this.network.onRoomListUpdate = (rooms: PublicRoomInfo[]) => {
       this.renderRoomList(rooms);
+    };
+
+    this.network.onStatsUpdate = (stats: ServerGlobalStats) => {
+      this.renderServerStats(stats);
     };
 
     this.network.onStateUpdate = (state: GameState) => {
