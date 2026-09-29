@@ -1202,6 +1202,51 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   animation: pulse-glow 1.5s infinite;
 }
 
+.status-disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: #8fa0b2;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ship-card.is-docked-disabled {
+  opacity: 0.44;
+  filter: grayscale(85%) brightness(0.75);
+  cursor: not-allowed;
+  background: rgba(7, 14, 25, 0.45);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.ship-card.is-docked-disabled:hover {
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  transform: none;
+}
+
+.ship-card.is-docked-disabled * {
+  pointer-events: none;
+}
+
+.ship-card.is-sailing-active {
+  border-color: rgba(0, 210, 255, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 210, 255, 0.15);
+  background: rgba(10, 24, 42, 0.85);
+}
+
+.ship-card.is-sailing-active:hover {
+  border-color: #00d2ff;
+  box-shadow: 0 8px 30px rgba(0, 210, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.docked-inactive-notice {
+  font-size: 0.78rem;
+  color: #7f8fa6;
+  font-style: italic;
+  padding: 6px 0;
+  text-align: center;
+  width: 100%;
+}
+
 .ship-gauges {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1468,6 +1513,28 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   background: rgba(255, 71, 87, 0.15);
   color: #ff4757;
   border: 1px solid rgba(255, 71, 87, 0.35);
+}
+
+.badge-disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: #8899a6;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.vessel-selector-card.is-disabled {
+  opacity: 0.36;
+  filter: grayscale(85%) brightness(0.7);
+  cursor: not-allowed !important;
+  pointer-events: none;
+  background: rgba(6, 12, 20, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.vessel-selector-card.is-disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(6, 12, 20, 0.4);
 }
 
 .contract-grid {

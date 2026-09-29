@@ -112,30 +112,50 @@ export class UIManager {
   private renderVesselSlider(
     containerId: string,
     player: PlayerCompany,
-    onSelect: () => void
+    onSelect: () => void,
+    allowDockedOnly: boolean = false
   ) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    if (!this.selectedShipId || !player.ships.some((s) => s.id === this.selectedShipId)) {
-      this.selectedShipId = player.ships[0]?.id || null;
+    const dockedShips = player.ships.filter((s) => s.status === 'docked');
+
+    if (allowDockedOnly) {
+      if (!this.selectedShipId || !dockedShips.some((s) => s.id === this.selectedShipId)) {
+        this.selectedShipId = dockedShips[0]?.id || null;
+      }
+    } else {
+      if (!this.selectedShipId || !player.ships.some((s) => s.id === this.selectedShipId)) {
+        this.selectedShipId = player.ships[0]?.id || null;
+      }
     }
 
     container.innerHTML = player.ships.map((ship) => {
       const bp = SHIP_BLUEPRINTS.find((b) => b.id === ship.blueprintId) || SHIP_BLUEPRINTS[0];
       const isSelected = ship.id === this.selectedShipId;
       const isDocked = ship.status === 'docked';
+      const isDisabled = allowDockedOnly && !isDocked;
       const port = WORLD_PORTS.find((p) => p.id === ship.currentPortId);
       const portName = port ? port.name : 'Unknown Port';
 
-      const statusBadge = isDocked
-        ? `<span class="vsc-badge badge-docked">⚓ DOCKED @ ${portName.toUpperCase()}</span>`
-        : ship.status === 'sailing'
-        ? `<span class="vsc-badge badge-sailing">🌊 AT SEA (${ship.currentVoyage?.progressPercent || 0}%)</span>`
-        : `<span class="vsc-badge badge-hazard">⚠️ IN HAZARD</span>`;
+      let statusBadge = '';
+      if (isDocked) {
+        statusBadge = `<span class="vsc-badge badge-docked">⚓ DOCKED @ ${portName.toUpperCase()}</span>`;
+      } else if (ship.status === 'sailing') {
+        statusBadge = isDisabled
+          ? `<span class="vsc-badge badge-disabled">🌊 AT SEA (DISABLED)</span>`
+          : `<span class="vsc-badge badge-sailing">🌊 AT SEA (${ship.currentVoyage?.progressPercent || 0}%)</span>`;
+      } else {
+        statusBadge = isDisabled
+          ? `<span class="vsc-badge badge-disabled">⚠️ HAZARD (DISABLED)</span>`
+          : `<span class="vsc-badge badge-hazard">⚠️ IN HAZARD</span>`;
+      }
 
       return `
-        <div class="vessel-selector-card ${isSelected ? 'active' : ''} ${isDocked ? 'is-docked' : 'is-sailing'}" data-ship-id="${ship.id}">
+        <div class="vessel-selector-card ${isSelected ? 'active' : ''} ${isDocked ? 'is-docked' : 'is-sailing'} ${isDisabled ? 'is-disabled' : ''}" 
+             data-ship-id="${ship.id}"
+             data-disabled="${isDisabled ? 'true' : 'false'}"
+             title="${isDisabled ? `${ship.name} is currently at sea (cannot charter or service)` : `Select ${ship.name}`}">
           <div class="vsc-icon-wrap">
             ${getShipIllustrationSVG(bp.type, player.color)}
           </div>
@@ -153,6 +173,7 @@ export class UIManager {
 
     container.querySelectorAll('.vessel-selector-card').forEach((card) => {
       card.addEventListener('click', () => {
+        if (card.getAttribute('data-disabled') === 'true') return;
         const shipId = card.getAttribute('data-ship-id');
         if (shipId && shipId !== this.selectedShipId) {
           this.selectedShipId = shipId;
@@ -295,22 +316,24 @@ export class UIManager {
 
     player.ships.forEach((ship) => {
       const bp = SHIP_BLUEPRINTS.find((b) => b.id === ship.blueprintId) || SHIP_BLUEPRINTS[0];
+      const isDocked = ship.status === 'docked';
       const card = document.createElement('div');
-      card.className = 'ship-card';
+      card.className = isDocked ? 'ship-card is-docked-disabled' : 'ship-card is-sailing-active';
 
-      const statusClass =
-        ship.status === 'docked'
-          ? 'status-docked'
-          : ship.status === 'sailing'
-          ? 'status-sailing'
-          : 'status-minigame';
+      const port = WORLD_PORTS.find((p) => p.id === ship.currentPortId);
+      const portName = port ? port.name : 'PORT';
 
-      const statusText =
-        ship.status === 'docked'
-          ? `DOCKED @ ${WORLD_PORTS.find((p) => p.id === ship.currentPortId)?.name || 'PORT'}`
-          : ship.status === 'sailing'
-          ? `SAILING TO ${WORLD_PORTS.find((p) => p.id === ship.currentVoyage?.destinationPortId)?.name || 'PORT'}`
-          : 'NAVIGATING OBSTACLE';
+      const statusClass = isDocked
+        ? 'status-disabled'
+        : ship.status === 'sailing'
+        ? 'status-sailing'
+        : 'status-minigame';
+
+      const statusText = isDocked
+        ? `⚓ DOCKED IN ${portName.toUpperCase()} (INACTIVE IN FLEET)`
+        : ship.status === 'sailing'
+        ? `SAILING TO ${WORLD_PORTS.find((p) => p.id === ship.currentVoyage?.destinationPortId)?.name || 'PORT'}`
+        : 'NAVIGATING OBSTACLE';
 
       const fuelPercent = Math.round((ship.fuelTons / bp.fuelCapacityTons) * 100);
 
@@ -429,46 +452,27 @@ export class UIManager {
 
         <div class="ship-actions-row">
           ${
-            ship.status === 'docked' && !ship.cargo
-              ? `<button class="btn btn-primary btn-sm btn-charter" data-id="${ship.id}">Charter Cargo</button>`
-              : ''
-          }
-          ${
-            ship.status === 'docked' && ship.cargo
-              ? `<button class="btn btn-success btn-sm btn-sail" data-id="${ship.id}">Cast Off & Sail</button>`
-              : ''
-          }
-          ${
-            ship.status === 'docked'
-              ? `<button class="btn btn-secondary btn-sm btn-service" data-id="${ship.id}">Shipyard Service</button>`
+            isDocked
+              ? `<div class="docked-inactive-notice">⚓ Berthed in ${portName} — Non-clickable in Fleet view. Manage in Freight Market or Shipyard.</div>`
+              : ship.status === 'sailing'
+              ? `<button class="btn btn-primary btn-sm btn-track-voyage" data-id="${ship.id}">🗺️ Track on Sea Map (${ship.currentVoyage?.progressPercent || 0}%)</button>`
               : ''
           }
         </div>
       `;
 
       // Event listeners for action buttons
-      const charterBtn = card.querySelector('.btn-charter');
-      if (charterBtn) {
-        charterBtn.addEventListener('click', () => {
-          this.selectedShipId = ship.id;
-          const brokerTab = document.querySelector('[data-target="tab-broker"]') as HTMLButtonElement;
-          if (brokerTab) brokerTab.click();
+      if (!isDocked) {
+        card.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).closest('button')) return;
+          this.switchTab('tab-worldmap');
         });
       }
 
-      const sailBtn = card.querySelector('.btn-sail');
-      if (sailBtn) {
-        sailBtn.addEventListener('click', () => {
-          this.network.startVoyage(ship.id);
-        });
-      }
-
-      const serviceBtn = card.querySelector('.btn-service');
-      if (serviceBtn) {
-        serviceBtn.addEventListener('click', () => {
-          this.selectedShipId = ship.id;
-          const yardTab = document.querySelector('[data-target="tab-shipyard"]') as HTMLButtonElement;
-          if (yardTab) yardTab.click();
+      const trackBtn = card.querySelector('.btn-track-voyage');
+      if (trackBtn) {
+        trackBtn.addEventListener('click', () => {
+          this.switchTab('tab-worldmap');
         });
       }
 
@@ -554,25 +558,31 @@ export class UIManager {
 
     this.renderVesselSlider('broker-vessel-slider', player, () => {
       this.renderBrokerView();
-    });
+    }, true);
 
-    const currentShip = player.ships.find((s) => s.id === this.selectedShipId) || player.ships[0];
+    const dockedShips = player.ships.filter((s) => s.status === 'docked');
     const container = document.getElementById('contract-list-container');
-    if (!container || !currentShip) return;
+    if (!container) return;
 
-    if (currentShip.status !== 'docked' || !currentShip.currentPortId) {
+    if (dockedShips.length === 0) {
       container.innerHTML = `
-        <div class="glass-panel" style="padding: 2rem; grid-column: 1 / -1; text-align: center;">
-          <h3>Vessel is not in port</h3>
-          <p class="text-secondary">${currentShip.name} is currently at sea. Vessels can only charter new cargo while berthed in harbor.</p>
-          <button id="btn-broker-back-1" class="btn btn-primary btn-sm" style="margin-top: 1.25rem;">
-            ⬅ Return to Fleet Management
+        <div class="glass-panel" style="padding: 2.5rem; grid-column: 1 / -1; text-align: center;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🌊</div>
+          <h3 style="color: #00d2ff;">All Vessels Currently at Sea</h3>
+          <p class="text-secondary" style="max-width: 500px; margin: 0.5rem auto 1.5rem auto;">
+            Charter contracts can only be negotiated and loaded while a vessel is berthed in a harbor. Wait for a vessel to arrive in port, or view voyages in Fleet Management.
+          </p>
+          <button id="btn-broker-to-fleet" class="btn btn-primary">
+            🏢 Open Fleet Management
           </button>
         </div>
       `;
-      document.getElementById('btn-broker-back-1')?.addEventListener('click', () => this.switchTab('tab-fleet'));
+      document.getElementById('btn-broker-to-fleet')?.addEventListener('click', () => this.switchTab('tab-fleet'));
       return;
     }
+
+    const currentShip = player.ships.find((s) => s.id === this.selectedShipId && s.status === 'docked') || dockedShips[0];
+    if (!currentShip || !currentShip.currentPortId) return;
 
     if (currentShip.cargo) {
       container.innerHTML = `
@@ -687,11 +697,30 @@ export class UIManager {
 
     this.renderVesselSlider('yard-vessel-slider', player, () => {
       this.renderShipyardView();
-    });
+    }, true);
 
-    const currentShip = player.ships.find((s) => s.id === this.selectedShipId) || player.ships[0];
+    const dockedShips = player.ships.filter((s) => s.status === 'docked');
     const detailsContainer = document.getElementById('yard-ship-details');
-    if (detailsContainer && currentShip) {
+    if (detailsContainer) {
+      if (dockedShips.length === 0) {
+        detailsContainer.innerHTML = `
+          <div style="padding: 2.5rem 1rem; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚓</div>
+            <h4 style="color: #00d2ff;">No Vessels in Drydock Berth</h4>
+            <p class="text-secondary" style="font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.5;">
+              All company vessels are sailing at sea. Ships must be berthed at a port facility to overhaul hull plates, service engines, or pump bunker fuel.
+            </p>
+            <button id="btn-yard-to-fleet" class="btn btn-secondary btn-sm" style="margin-top: 1.25rem;">
+              🏢 View Sailing Fleets
+            </button>
+          </div>
+        `;
+        document.getElementById('btn-yard-to-fleet')?.addEventListener('click', () => this.switchTab('tab-fleet'));
+        return;
+      }
+
+      const currentShip = player.ships.find((s) => s.id === this.selectedShipId && s.status === 'docked') || dockedShips[0];
+      if (!currentShip || !currentShip.currentPortId) return;
       const bp = SHIP_BLUEPRINTS.find((b) => b.id === currentShip.blueprintId) || SHIP_BLUEPRINTS[0];
       const port = WORLD_PORTS.find((p) => p.id === currentShip.currentPortId);
       const fuelPrice = port ? this.currentState.bunkerPrices[port.id] || port.fuelPricePerTon : 500;
