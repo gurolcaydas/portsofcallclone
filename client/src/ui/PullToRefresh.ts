@@ -6,7 +6,6 @@ export class PullToRefresh {
   private indicatorEl: HTMLElement | null = null;
   private iconEl: HTMLElement | null = null;
   private spinnerEl: HTMLElement | null = null;
-  private textEl: HTMLElement | null = null;
   private appEl: HTMLElement | null = null;
 
   private startY = 0;
@@ -16,8 +15,8 @@ export class PullToRefresh {
   private state: PullToRefreshState = 'idle';
   private hasVibrated = false;
 
-  private readonly THRESHOLD = 68; // px required to trigger reload
-  private readonly MAX_PULL = 110;  // max visual displacement
+  private readonly THRESHOLD = 65; // px required to trigger reload
+  private readonly MAX_PULL = 100; // max visual displacement
 
   constructor() {
     this.appEl = document.getElementById('app');
@@ -26,35 +25,30 @@ export class PullToRefresh {
   }
 
   private createIndicator() {
-    if (document.getElementById('pull-to-refresh-indicator')) {
-      this.indicatorEl = document.getElementById('pull-to-refresh-indicator');
+    // Remove any legacy indicator if present
+    const existing = document.getElementById('pull-to-refresh-indicator');
+    if (existing) existing.remove();
+
+    this.indicatorEl = document.createElement('div');
+    this.indicatorEl.id = 'pull-to-refresh-indicator';
+    this.indicatorEl.className = 'pull-refresh-indicator';
+
+    // Pure minimalist circular bead — zero text labels on screen
+    this.indicatorEl.innerHTML = `
+      <div class="pull-refresh-bead glass-panel">
+        <span class="pull-refresh-anchor">⚓</span>
+        <div class="pull-refresh-spinner hidden"></div>
+      </div>
+    `;
+
+    if (this.appEl) {
+      this.appEl.prepend(this.indicatorEl);
     } else {
-      this.indicatorEl = document.createElement('div');
-      this.indicatorEl.id = 'pull-to-refresh-indicator';
-      this.indicatorEl.className = 'pull-refresh-indicator';
-
-      this.indicatorEl.innerHTML = `
-        <div class="pull-refresh-card glass-panel">
-          <div class="pull-refresh-icon-box">
-            <span class="pull-refresh-anchor">⚓</span>
-            <div class="pull-refresh-spinner hidden"></div>
-          </div>
-          <div class="pull-refresh-label-wrap">
-            <span class="pull-refresh-label">Pull down to refresh</span>
-          </div>
-        </div>
-      `;
-
-      if (this.appEl) {
-        this.appEl.prepend(this.indicatorEl);
-      } else {
-        document.body.prepend(this.indicatorEl);
-      }
+      document.body.prepend(this.indicatorEl);
     }
 
-    this.iconEl = this.indicatorEl?.querySelector('.pull-refresh-anchor') as HTMLElement;
-    this.spinnerEl = this.indicatorEl?.querySelector('.pull-refresh-spinner') as HTMLElement;
-    this.textEl = this.indicatorEl?.querySelector('.pull-refresh-label') as HTMLElement;
+    this.iconEl = this.indicatorEl.querySelector('.pull-refresh-anchor') as HTMLElement;
+    this.spinnerEl = this.indicatorEl.querySelector('.pull-refresh-spinner') as HTMLElement;
   }
 
   private isMinigameActive(): boolean {
@@ -78,7 +72,6 @@ export class PullToRefresh {
   }
 
   private bindEvents() {
-    // Touch Events
     window.addEventListener('touchstart', this.onTouchStart, { passive: true });
     window.addEventListener('touchmove', this.onTouchMove, { passive: false });
     window.addEventListener('touchend', this.onTouchEnd, { passive: true });
@@ -136,7 +129,6 @@ export class PullToRefresh {
     this.currentDistance = Math.min(this.MAX_PULL, Math.pow(rawDeltaY, 0.84));
 
     if (this.currentDistance > 8) {
-      // Prevent browser default overscroll when pulling our custom indicator
       if (e.cancelable) e.preventDefault();
 
       const progress = Math.min(1, this.currentDistance / this.THRESHOLD);
@@ -159,7 +151,7 @@ export class PullToRefresh {
         this.updateUi('pulling', progress);
       }
 
-      this.renderTransform(this.currentDistance);
+      this.renderTransform(this.currentDistance, progress);
     }
   };
 
@@ -184,35 +176,34 @@ export class PullToRefresh {
     if (state === 'pulling') {
       this.indicatorEl.classList.remove('ready', 'refreshing');
       this.indicatorEl.classList.add('pulling');
-      if (this.textEl) this.textEl.textContent = 'Pull down to refresh';
       if (this.spinnerEl) this.spinnerEl.classList.add('hidden');
       if (this.iconEl) {
         this.iconEl.classList.remove('hidden');
-        this.iconEl.style.transform = `rotate(${progress * 280}deg) scale(${0.85 + progress * 0.25})`;
+        this.iconEl.style.transform = `rotate(${progress * 300}deg) scale(${0.8 + progress * 0.25})`;
       }
     } else if (state === 'ready') {
       this.indicatorEl.classList.remove('pulling');
       this.indicatorEl.classList.add('ready');
-      if (this.textEl) this.textEl.textContent = 'Release to reload';
       if (this.iconEl) {
         this.iconEl.style.transform = 'rotate(360deg) scale(1.15)';
       }
     } else if (state === 'refreshing') {
       this.indicatorEl.classList.remove('pulling', 'ready');
       this.indicatorEl.classList.add('refreshing');
-      if (this.textEl) this.textEl.textContent = 'Reloading simulation...';
       if (this.iconEl) this.iconEl.classList.add('hidden');
       if (this.spinnerEl) this.spinnerEl.classList.remove('hidden');
     }
   }
 
-  private renderTransform(distance: number, animate = false) {
+  private renderTransform(distance: number, progress: number, animate = false) {
     if (!this.indicatorEl) return;
     if (animate) {
-      this.indicatorEl.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      this.indicatorEl.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease';
     } else {
       this.indicatorEl.style.transition = 'none';
     }
+    const opacity = Math.min(1, Math.max(0, (progress - 0.1) / 0.7));
+    this.indicatorEl.style.opacity = `${opacity}`;
     this.indicatorEl.style.transform = `translateY(${distance}px)`;
   }
 
@@ -221,7 +212,7 @@ export class PullToRefresh {
     this.state = 'idle';
     this.currentDistance = 0;
     if (this.indicatorEl) {
-      this.renderTransform(0, true);
+      this.renderTransform(0, 0, true);
       this.indicatorEl.classList.remove('pulling', 'ready', 'refreshing');
     }
   }
@@ -229,7 +220,7 @@ export class PullToRefresh {
   private triggerRefresh() {
     this.state = 'refreshing';
     this.updateUi('refreshing', 1);
-    this.renderTransform(58, true);
+    this.renderTransform(52, 1, true);
 
     try {
       sounds.playBell();
@@ -237,9 +228,8 @@ export class PullToRefresh {
       // Audio fallback
     }
 
-    // Refresh page smoothly with brief feedback
     setTimeout(() => {
       window.location.reload();
-    }, 380);
+    }, 350);
   }
 }
