@@ -4,12 +4,14 @@ import { WorldMap } from './ui/WorldMap.js';
 import { HarborDocking3D } from './minigames/HarborDocking3D.js';
 import { HazardNav3D } from './minigames/HazardNav3D.js';
 import { sounds } from './sound/SoundManager.js';
+import { PullToRefresh } from './ui/PullToRefresh.js';
 import { WORLD_PORTS, SHIP_BLUEPRINTS, GameState, PublicRoomInfo, ServerGlobalStats, getRandomCompanyName, calculateHomePortCost } from '@portofcall/shared';
 
 class App {
   private network: NetworkClient;
   private ui: UIManager;
   private worldMap: WorldMap;
+  private pullToRefresh: PullToRefresh;
   private dockingGame: HarborDocking3D | null = null;
   private hazardGame: HazardNav3D | null = null;
   private activeMinigameShipId: string | null = null;
@@ -20,6 +22,7 @@ class App {
   constructor() {
     this.network = new NetworkClient();
     this.ui = new UIManager(this.network);
+    this.pullToRefresh = new PullToRefresh();
 
     this.worldMap = new WorldMap(
       'world-map-canvas',
