@@ -421,18 +421,18 @@ export class HarborDocking3D {
     if (hudControls && !document.getElementById('hud-steering-pad')) {
       const pad = document.createElement('div');
       pad.id = 'hud-steering-pad';
-      pad.style.display = 'flex';
-      pad.style.gap = '6px';
-      pad.style.alignItems = 'center';
 
       pad.innerHTML = `
-        <button id="btn-dock-port" class="btn btn-secondary btn-sm" title="Turn Port (Left)">◄ PORT</button>
-        <button id="btn-dock-mid" class="btn btn-secondary btn-sm" title="Center Rudder">MID</button>
-        <button id="btn-dock-stbd" class="btn btn-secondary btn-sm" title="Turn Starboard (Right)">STBD ►</button>
-        <span style="border-left: 1px solid rgba(255,255,255,0.2); height: 20px; margin: 0 4px;"></span>
-        <button id="btn-dock-faster" class="btn btn-primary btn-sm" title="Throttle Ahead">▲ AHEAD</button>
-        <button id="btn-dock-stop" class="btn btn-warning btn-sm" title="Engine Stop (Coast)">◼ STOP</button>
-        <button id="btn-dock-slower" class="btn btn-primary btn-sm" title="Throttle Astern (Brake)">▼ ASTERN</button>
+        <div class="hud-control-group steering-group">
+          <button id="btn-dock-port" class="btn btn-secondary btn-sm" title="Turn Port (Left)">◄ PORT</button>
+          <button id="btn-dock-mid" class="btn btn-secondary btn-sm" title="Center Rudder">MID</button>
+          <button id="btn-dock-stbd" class="btn btn-secondary btn-sm" title="Turn Starboard (Right)">STBD ►</button>
+        </div>
+        <div class="hud-control-group throttle-group">
+          <button id="btn-dock-faster" class="btn btn-primary btn-sm" title="Throttle Ahead">▲ AHEAD</button>
+          <button id="btn-dock-stop" class="btn btn-warning btn-sm" title="Engine Stop (Coast)">◼ STOP</button>
+          <button id="btn-dock-slower" class="btn btn-primary btn-sm" title="Throttle Astern (Brake)">▼ ASTERN</button>
+        </div>
       `;
       hudControls.insertBefore(pad, hudControls.firstChild);
 
@@ -464,21 +464,36 @@ export class HarborDocking3D {
         this.updateHud();
       });
 
-      document.getElementById('btn-dock-faster')?.addEventListener('click', () => {
+      const handleThrottleAhead = (e?: Event) => {
+        if (e && e.type === 'touchstart') e.preventDefault();
         this.throttleSetting = Math.min(4, this.throttleSetting + 1);
         this.updateHud();
         sounds.setEngineThrottle(Math.abs(this.throttleSetting) * 25);
-      });
-      document.getElementById('btn-dock-stop')?.addEventListener('click', () => {
+      };
+      const handleThrottleStop = (e?: Event) => {
+        if (e && e.type === 'touchstart') e.preventDefault();
         this.throttleSetting = 0;
         this.updateHud();
         sounds.setEngineThrottle(0);
-      });
-      document.getElementById('btn-dock-slower')?.addEventListener('click', () => {
+      };
+      const handleThrottleAstern = (e?: Event) => {
+        if (e && e.type === 'touchstart') e.preventDefault();
         this.throttleSetting = Math.max(-3, this.throttleSetting - 1);
         this.updateHud();
         sounds.setEngineThrottle(Math.abs(this.throttleSetting) * 25);
-      });
+      };
+
+      const btnFaster = document.getElementById('btn-dock-faster');
+      btnFaster?.addEventListener('click', handleThrottleAhead);
+      btnFaster?.addEventListener('touchstart', handleThrottleAhead);
+
+      const btnStop = document.getElementById('btn-dock-stop');
+      btnStop?.addEventListener('click', handleThrottleStop);
+      btnStop?.addEventListener('touchstart', handleThrottleStop);
+
+      const btnSlower = document.getElementById('btn-dock-slower');
+      btnSlower?.addEventListener('click', handleThrottleAstern);
+      btnSlower?.addEventListener('touchstart', handleThrottleAstern);
     }
   }
 

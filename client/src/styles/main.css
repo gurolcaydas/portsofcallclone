@@ -46,14 +46,16 @@
   user-select: none;
 }
 
-body {
+html, body {
   background-color: var(--bg-deep);
   color: var(--text-main);
   font-family: var(--font-sans);
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(0, 85, 140, 0.18) 0%, transparent 60%),
     radial-gradient(circle at 100% 100%, rgba(30, 55, 153, 0.12) 0%, transparent 50%);
@@ -63,8 +65,10 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   position: relative;
+  overflow: hidden;
 }
 
 /* =========================================================
@@ -251,6 +255,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
 }
 
 .lobby-backdrop {
@@ -282,6 +289,7 @@ body {
   z-index: 10;
   width: 580px;
   max-width: 95vw;
+  margin: auto;
   padding: 2.25rem;
   display: flex;
   flex-direction: column;
@@ -388,15 +396,23 @@ body {
 
 .browser-player-bar {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 8px;
   background: rgba(5, 12, 22, 0.6);
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.browser-player-bar label {
+.browser-form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.browser-form-label {
+  min-width: 140px;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -1166,14 +1182,37 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   z-index: 10;
 }
 
-.map-overlay-panel h4 {
+.map-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.4rem;
+}
+
+.map-overlay-header h4, .map-overlay-panel h4 {
   font-family: var(--font-heading);
   font-size: 0.8rem;
   letter-spacing: 1.5px;
   color: var(--accent-cyan);
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.4rem;
+  margin: 0;
+}
+
+.btn-toggle-tracker {
+  display: none;
+  background: rgba(0, 210, 255, 0.15);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  color: #00d2ff;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-tracker:hover {
+  background: rgba(0, 210, 255, 0.3);
 }
 
 .voyage-list-compact {
@@ -1236,6 +1275,25 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
 /* =========================================================
    FLEET VIEW
    ========================================================= */
+.fleet-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fleet-hq-badge {
+  background: rgba(0, 210, 255, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #00d2ff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .fleet-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -2213,6 +2271,19 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   font-size: 0.75rem;
 }
 
+#hud-steering-pad {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hud-control-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 /* =========================================================
    HAZARD SCREEN HUD
    ========================================================= */
@@ -2674,3 +2745,607 @@ input[type="text"]:focus, input[type="number"]:focus, .styled-select:focus {
   padding: 1rem 0;
   font-style: italic;
 }
+
+/* =========================================================
+   RESPONSIVE LAYOUT & MOBILE OPTIMIZATIONS (TABLETS & PHONES)
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .shipyard-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .bank-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 1. Global Header */
+  #global-header {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
+  }
+
+  #news-ticker-container {
+    display: none; /* Hide ticker on small screens to save valuable viewport space */
+  }
+
+  .header-left, .header-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .logo-mark {
+    gap: 0.35rem;
+  }
+
+  .logo-mark .game-title {
+    font-size: 0.92rem;
+    letter-spacing: 1px;
+  }
+
+  .homeport-header-pill, #company-rep-pill {
+    display: none; /* Less critical in header, accessible in game subviews */
+  }
+
+  .stat-pill {
+    padding: 3px 6px;
+    font-size: 0.72rem;
+    gap: 0.25rem;
+  }
+
+  .code-tag {
+    padding: 1px 5px;
+    font-size: 0.72rem;
+  }
+
+  .room-info, .date-display {
+    font-size: 0.72rem;
+  }
+
+  /* 2. Lobby Screen */
+  #view-lobby {
+    align-items: flex-start;
+    padding: 0.75rem 0.5rem 2rem 0.5rem;
+  }
+
+  .lobby-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.25rem 0.9rem;
+    gap: 1rem;
+    margin: 0.5rem auto 1.5rem auto;
+    border-radius: 10px;
+  }
+
+  .brand-header .hero-anchor {
+    font-size: 2.2rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .brand-header h1 {
+    font-size: 1.45rem;
+    letter-spacing: 2px;
+  }
+
+  .brand-header .subtitle {
+    font-size: 0.75rem;
+  }
+
+  .lobby-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin: 0.2rem 0 0.6rem 0;
+  }
+
+  .lobby-stat-card {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .stat-icon {
+    font-size: 1.1rem;
+  }
+
+  .stat-meta .stat-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.3px;
+  }
+
+  .stat-meta .stat-number {
+    font-size: 1.05rem;
+  }
+
+  .lobby-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tab-btn {
+    padding: 7px 6px;
+    font-size: 0.75rem;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .recent-session-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .recent-session-banner .session-actions {
+    justify-content: flex-end;
+  }
+
+  .browser-form-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .browser-form-label {
+    min-width: unset;
+    font-size: 0.8rem;
+  }
+
+  .browser-player-bar {
+    padding: 8px 10px;
+  }
+
+  /* 3. Game Navigation Bar */
+  .game-nav {
+    height: 42px;
+    padding: 0 0.5rem;
+    gap: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .game-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 5px 9px;
+    gap: 4px;
+  }
+
+  /* 4. Subviews General */
+  .game-subview {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .panel-header {
+    margin-bottom: 0.85rem;
+  }
+
+  .panel-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .panel-header .subtitle {
+    font-size: 0.75rem;
+  }
+
+  /* 5. World Map Subview */
+  .map-top-bar {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .btn-map-filter {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+
+  .map-fleet-summary {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+
+  .btn-toggle-tracker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-overlay-panel {
+    top: auto;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    max-height: 160px;
+    padding: 8px 12px;
+    transition: all 0.25s ease;
+    z-index: 25;
+  }
+
+  .map-overlay-panel.collapsed {
+    max-height: 38px;
+    overflow: hidden;
+    padding: 6px 12px;
+  }
+
+  .map-overlay-panel.collapsed .voyage-list-compact {
+    display: none;
+  }
+
+  .map-controls {
+    display: none; /* Hide bottom map tip on mobile so it doesn't overlap drawer */
+  }
+
+  .map-tactical-tooltip {
+    max-width: calc(100vw - 20px);
+    min-width: 200px;
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+
+  /* 6. Fleet View */
+  .fleet-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .fleet-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .ship-card {
+    padding: 0.85rem;
+    gap: 0.75rem;
+  }
+
+  .ship-card-illustration {
+    height: 90px;
+    padding: 4px 8px;
+  }
+
+  .ship-actions-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ship-actions-row .btn {
+    width: 100%;
+    min-height: 38px;
+    font-size: 0.82rem;
+  }
+
+  .ship-gauges {
+    gap: 0.5rem;
+  }
+
+  /* 7. Freight Broker View */
+  .broker-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  #btn-broker-top-back {
+    align-self: flex-start;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .contract-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .contract-card {
+    padding: 0.85rem;
+    gap: 0.6rem;
+  }
+
+  .contract-specs {
+    grid-template-columns: 1fr 1fr;
+    font-size: 0.74rem;
+    padding: 6px;
+  }
+
+  .contract-payout {
+    font-size: 1.1rem;
+  }
+
+  /* 8. Shipyard View */
+  .shipyard-col {
+    padding: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .catalog-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .catalog-price {
+    text-align: left;
+    margin-bottom: 0.25rem;
+  }
+
+  .catalog-list {
+    max-height: 380px;
+  }
+
+  /* 9. Banking View */
+  .bank-card {
+    padding: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-row input, .form-row button {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  /* 10. Syndicate Standings / Leaderboard */
+  .leaderboard-table-wrap {
+    padding: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .leaderboard-table {
+    min-width: 540px;
+  }
+
+  .leaderboard-table th, .leaderboard-table td {
+    padding: 8px 6px;
+    font-size: 0.78rem;
+  }
+
+  /* 11. 3D Harbor Docking View HUD */
+  .minigame-hud {
+    padding: 0.5rem;
+  }
+
+  .hud-header {
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  .hud-highlight {
+    font-size: 1rem;
+    margin-left: 0;
+    display: block;
+  }
+
+  .hud-ship-info {
+    font-size: 0.75rem;
+    justify-content: center;
+  }
+
+  .hud-bridge-console {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .hud-telemetry {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .telemetry-item {
+    min-width: unset;
+  }
+
+  .telemetry-item .label {
+    font-size: 0.58rem;
+  }
+
+  .telemetry-item .val {
+    font-size: 0.85rem;
+  }
+
+  .integrity-bar {
+    width: 60px;
+    height: 6px;
+  }
+
+  .control-hints {
+    display: none; /* Hide keyboard shortcut hints on mobile */
+  }
+
+  #hud-steering-pad {
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hud-control-group {
+    width: 100%;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .hud-control-group .btn {
+    flex: 1;
+    max-width: 110px;
+    padding: 8px 6px !important;
+    font-size: 0.72rem !important;
+    min-height: 38px;
+    white-space: nowrap;
+  }
+
+  .hud-action-buttons {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  #btn-hire-tugs {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  #docking-berth-prompt {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  /* 12. 3D Hazard HUD */
+  .hazard-hud {
+    padding: 0.5rem;
+  }
+
+  .hazard-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .hazard-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .hazard-header p {
+    font-size: 0.72rem;
+  }
+
+  .hazard-bottom-console {
+    padding: 6px 8px;
+  }
+
+  .hazard-telemetry {
+    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  #hazard-touch-btns {
+    width: 100%;
+    gap: 8px;
+  }
+
+  #hazard-touch-btns .btn {
+    flex: 1;
+    padding: 10px 12px !important;
+    min-height: 42px;
+  }
+
+  /* 13. Modals & Overlays */
+  .modal-box {
+    width: 95vw;
+    max-width: 95vw;
+    padding: 1rem;
+    gap: 0.85rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .port-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .pstat .label {
+    font-size: 0.65rem;
+  }
+
+  .pstat strong {
+    font-size: 0.78rem;
+  }
+
+  .port-desc {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  /* 14. Toasts */
+  .toast-stack {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .toast {
+    max-width: 100%;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small cellphones (e.g. 320px - 390px) */
+  #global-header {
+    padding: 4px 8px;
+  }
+
+  .logo-mark .game-title {
+    display: none; /* Show icon and ONLINE badge */
+  }
+
+  .date-display {
+    display: none;
+  }
+
+  #company-loan-pill {
+    display: none; /* Keep cash pill front and center */
+  }
+
+  #company-cash-pill {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+
+  .header-left, .header-right {
+    gap: 4px;
+  }
+
+  #btn-leave-game {
+    padding: 3px 6px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .brand-header h1 {
+    font-size: 1.25rem;
+    letter-spacing: 1.5px;
+  }
+
+  .port-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-meta .stat-number {
+    font-size: 0.95rem;
+  }
+
+  .stat-meta .stat-label {
+    font-size: 0.52rem;
+  }
+}
+

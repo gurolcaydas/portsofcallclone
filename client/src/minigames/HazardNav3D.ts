@@ -107,10 +107,20 @@ export class HazardNav3D {
       `;
       controls.appendChild(btnDiv);
 
-      document.getElementById('btn-hazard-left')?.addEventListener('mousedown', () => this.activeKeys.add('a'));
-      document.getElementById('btn-hazard-left')?.addEventListener('mouseup', () => this.activeKeys.delete('a'));
-      document.getElementById('btn-hazard-right')?.addEventListener('mousedown', () => this.activeKeys.add('d'));
-      document.getElementById('btn-hazard-right')?.addEventListener('mouseup', () => this.activeKeys.delete('d'));
+      const btnLeft = document.getElementById('btn-hazard-left');
+      const btnRight = document.getElementById('btn-hazard-right');
+
+      btnLeft?.addEventListener('mousedown', () => this.activeKeys.add('a'));
+      btnLeft?.addEventListener('mouseup', () => this.activeKeys.delete('a'));
+      btnLeft?.addEventListener('mouseleave', () => this.activeKeys.delete('a'));
+      btnLeft?.addEventListener('touchstart', (e) => { e.preventDefault(); this.activeKeys.add('a'); });
+      btnLeft?.addEventListener('touchend', (e) => { e.preventDefault(); this.activeKeys.delete('a'); });
+
+      btnRight?.addEventListener('mousedown', () => this.activeKeys.add('d'));
+      btnRight?.addEventListener('mouseup', () => this.activeKeys.delete('d'));
+      btnRight?.addEventListener('mouseleave', () => this.activeKeys.delete('d'));
+      btnRight?.addEventListener('touchstart', (e) => { e.preventDefault(); this.activeKeys.add('d'); });
+      btnRight?.addEventListener('touchend', (e) => { e.preventDefault(); this.activeKeys.delete('d'); });
     }
   }
 

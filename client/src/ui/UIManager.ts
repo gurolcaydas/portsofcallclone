@@ -53,6 +53,7 @@ export class UIManager {
     navTabs.forEach((t) => {
       if (t.getAttribute('data-target') === targetId) {
         t.classList.add('active');
+        t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       } else {
         t.classList.remove('active');
       }
@@ -99,6 +100,32 @@ export class UIManager {
     if (brokerTopBack) {
       brokerTopBack.addEventListener('click', () => this.switchTab('tab-fleet'));
     }
+
+    // Map Tracker Panel collapse/expand toggle on mobile
+    const toggleTrackerBtn = document.getElementById('btn-toggle-tracker');
+    const trackerHeader = document.getElementById('map-tracker-toggle-header');
+    const voyagesOverlay = document.getElementById('map-voyages-overlay');
+
+    const toggleTracker = () => {
+      if (!voyagesOverlay) return;
+      voyagesOverlay.classList.toggle('collapsed');
+      const isCollapsed = voyagesOverlay.classList.contains('collapsed');
+      if (toggleTrackerBtn) {
+        toggleTrackerBtn.textContent = isCollapsed ? '▲' : '▼';
+        toggleTrackerBtn.setAttribute('title', isCollapsed ? 'Expand Tracker' : 'Collapse Tracker');
+      }
+    };
+
+    toggleTrackerBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTracker();
+    });
+    trackerHeader?.addEventListener('click', () => {
+      // Toggle when clicking header on small screens
+      if (window.innerWidth <= 768) {
+        toggleTracker();
+      }
+    });
   }
 
   private setupSliderArrows() {

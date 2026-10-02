@@ -93,44 +93,53 @@ export class WorldMap {
     });
   }
 
-  private setupEvents() {
-    this.canvas.addEventListener('mousemove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+  private getHitTarget(clientX: number, clientY: number, isTouch = false): { ship: RenderedShipTarget | null; port: Port | null; mouseX: number; mouseY: number } {
+    const rect = this.canvas.getBoundingClientRect();
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
 
-      const scaleX = rect.width / this.REF_W;
-      const scaleY = rect.height / this.REF_H;
+    const scaleX = rect.width / this.REF_W;
+    const scaleY = rect.height / this.REF_H;
 
-      // 1. Hit-test sailing vessels first
-      let hitShip: RenderedShipTarget | null = null;
-      for (const rs of this.renderedShips) {
-        const dist = Math.hypot(mouseX - rs.x, mouseY - rs.y);
-        if (dist <= rs.radius + 6) {
-          hitShip = rs;
+    // Generous touch tolerance on mobile fingers
+    const shipTolerance = isTouch ? 16 : 6;
+    const portTolerance = isTouch ? 28 : 18;
+
+    // 1. Hit-test sailing vessels first
+    let hitShip: RenderedShipTarget | null = null;
+    for (const rs of this.renderedShips) {
+      const dist = Math.hypot(mouseX - rs.x, mouseY - rs.y);
+      if (dist <= rs.radius + shipTolerance) {
+        hitShip = rs;
+        break;
+      }
+    }
+
+    // 2. Hit-test ports
+    let hitPort: Port | null = null;
+    if (!hitShip) {
+      for (const p of WORLD_PORTS) {
+        const px = p.x * scaleX;
+        const py = p.y * scaleY;
+        const dist = Math.hypot(mouseX - px, mouseY - py);
+        if (dist < portTolerance) {
+          hitPort = p;
           break;
         }
       }
+    }
 
-      // 2. Hit-test ports
-      let hitPort: Port | null = null;
-      if (!hitShip) {
-        for (const p of WORLD_PORTS) {
-          const px = p.x * scaleX;
-          const py = p.y * scaleY;
-          const dist = Math.hypot(mouseX - px, mouseY - py);
-          if (dist < 18) {
-            hitPort = p;
-            break;
-          }
-        }
-      }
+    return { ship: hitShip, port: hitPort, mouseX, mouseY };
+  }
 
-      this.hoveredShip = hitShip;
-      this.hoveredPort = hitPort;
-      this.canvas.style.cursor = hitShip || hitPort ? 'pointer' : 'default';
+  private setupEvents() {
+    this.canvas.addEventListener('mousemove', (e) => {
+      const hit = this.getHitTarget(e.clientX, e.clientY, false);
+      this.hoveredShip = hit.ship;
+      this.hoveredPort = hit.port;
+      this.canvas.style.cursor = hit.ship || hit.port ? 'pointer' : 'default';
 
-      this.updateTooltip(mouseX, mouseY);
+      this.updateTooltip(hit.mouseX, hit.mouseY);
     });
 
     this.canvas.addEventListener('mouseleave', () => {
@@ -141,17 +150,47 @@ export class WorldMap {
       }
     });
 
-    this.canvas.addEventListener('click', () => {
-      if (this.hoveredShip) {
-        this.selectedShipId = this.hoveredShip.ship.id;
+    this.canvas.addEventListener('click', (e) => {
+      const hit = this.getHitTarget(e.clientX, e.clientY, false);
+      if (hit.ship) {
+        this.selectedShipId = hit.ship.ship.id;
         sounds.playBell();
         if (this.onShipClick) {
-          this.onShipClick(this.hoveredShip.ship, this.hoveredShip.player);
+          this.onShipClick(hit.ship.ship, hit.ship.player);
         }
-      } else if (this.hoveredPort) {
-        this.onPortClick(this.hoveredPort);
+      } else if (hit.port) {
+        this.onPortClick(hit.port);
       }
     });
+
+    // Touch support for cellphones and tablets
+    this.canvas.addEventListener('touchend', (e) => {
+      if (e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const hit = this.getHitTarget(touch.clientX, touch.clientY, true);
+        if (hit.ship) {
+          e.preventDefault();
+          this.selectedShipId = hit.ship.ship.id;
+          sounds.playBell();
+          if (this.onShipClick) {
+            this.onShipClick(hit.ship.ship, hit.ship.player);
+          }
+        } else if (hit.port) {
+          e.preventDefault();
+          this.onPortClick(hit.port);
+        }
+      }
+    });
+  }
+
+  private setTooltipPosition(mouseX: number, mouseY: number) {
+    if (!this.tooltipEl) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const halfWidth = 140;
+    const clampX = Math.max(halfWidth + 8, Math.min(rect.width - halfWidth - 8, mouseX));
+    const clampY = Math.max(130, mouseY);
+    this.tooltipEl.style.left = `${clampX}px`;
+    this.tooltipEl.style.top = `${clampY}px`;
   }
 
   private updateTooltip(mouseX: number, mouseY: number) {
@@ -184,8 +223,7 @@ export class WorldMap {
           <div>Bunkers: <strong style="color: #ffa502;">${Math.round(ship.fuelTons)}t</strong> / ${bp.fuelCapacityTons}t</div>
         </div>
       `;
-      this.tooltipEl.style.left = `${mouseX}px`;
-      this.tooltipEl.style.top = `${mouseY}px`;
+      this.setTooltipPosition(mouseX, mouseY);
       this.tooltipEl.classList.remove('hidden');
       return;
     }
@@ -252,8 +290,7 @@ export class WorldMap {
           Click port beacon to open freight exchange & shipyard
         </div>
       `;
-      this.tooltipEl.style.left = `${mouseX}px`;
-      this.tooltipEl.style.top = `${mouseY}px`;
+      this.setTooltipPosition(mouseX, mouseY);
       this.tooltipEl.classList.remove('hidden');
       return;
     }

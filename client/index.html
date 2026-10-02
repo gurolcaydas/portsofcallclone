@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050b14">
   <title>Ports of Call Online — Multiplayer Maritime Trade Simulator</title>
   <meta name="description" content="A real-time multiplayer 3D adaptation of the legendary Ports of Call shipping empire simulation game.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,17 +138,17 @@
               </button>
             </div>
 
-            <div class="browser-player-bar" style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <label for="input-browser-company" style="min-width: 140px;">Company Name:</label>
-                <div class="company-name-input-group" style="flex: 1;">
+            <div class="browser-player-bar">
+              <div class="browser-form-row">
+                <label for="input-browser-company" class="browser-form-label">Company Name:</label>
+                <div class="company-name-input-group">
                   <input type="text" id="input-browser-company" maxlength="28" placeholder="e.g. Blue Star Line">
                   <button type="button" class="btn-dice-reroll" data-target="input-browser-company" title="Generate another random maritime company name">🎲</button>
                 </div>
               </div>
-              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <label for="select-browser-homeport" style="min-width: 140px;">Headquarters Port:</label>
-                <select id="select-browser-homeport" class="port-select" style="flex: 1;"></select>
+              <div class="browser-form-row">
+                <label for="select-browser-homeport" class="browser-form-label">Headquarters Port:</label>
+                <select id="select-browser-homeport" class="port-select"></select>
               </div>
               <div id="browser-homeport-info" class="homeport-cost-preview"></div>
             </div>
@@ -312,8 +313,11 @@
               </div>
 
               <!-- Map Legend / Overlays -->
-              <div class="map-overlay-panel glass-panel">
-                <h4>ACTIVE VESSEL TRACKER</h4>
+              <div class="map-overlay-panel glass-panel" id="map-voyages-overlay">
+                <div class="map-overlay-header" id="map-tracker-toggle-header">
+                  <h4>ACTIVE VESSEL TRACKER</h4>
+                  <button type="button" id="btn-toggle-tracker" class="btn-toggle-tracker" title="Toggle Vessel Tracker" aria-label="Toggle Vessel Tracker">▼</button>
+                </div>
                 <div id="map-active-voyages" class="voyage-list-compact">
                   <div class="empty-hint">No vessels currently at sea. Dock at a port to charter cargo.</div>
                 </div>
@@ -330,12 +334,12 @@
 
           <!-- View B: Fleet Management -->
           <div id="tab-fleet" class="game-subview">
-            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
+            <div class="panel-header fleet-header-row">
               <div>
                 <h2>Company Fleet</h2>
                 <p class="subtitle">Monitor vessel condition, bunker levels, cargo holds, and dispatch voyages.</p>
               </div>
-              <div id="fleet-hq-badge" style="background: rgba(0, 210, 255, 0.12); border: 1px solid rgba(0, 210, 255, 0.4); padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; color: #00d2ff; font-weight: 600;">
+              <div id="fleet-hq-badge" class="fleet-hq-badge">
                 ⚓ Headquarters: <span id="fleet-hq-name">Rotterdam</span>
               </div>
             </div>
